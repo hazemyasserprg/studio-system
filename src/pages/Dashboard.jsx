@@ -94,23 +94,25 @@ const Dashboard = () => {
       transition={{ duration: 0.4, ease: "easeOut" }}
       className="dashboard-page"
     >
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <div>
-          <h1 style={{ fontSize: '2rem', fontWeight: 700 }}>{t('overview')}</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>{t('overview_subtitle')}</p>
+      <header className="flex-between-responsive" style={{ marginBottom: '2rem', gap: '1.5rem' }}>
+        <div style={{ flex: 1 }}>
+          <h1 className="h1">{t('overview')}</h1>
+          <p className="text-mute">{t('overview_subtitle')}</p>
         </div>
-        <button className="btn btn-primary" onClick={() => navigate('/bookings', { state: { openModal: true } })}>
+        <button className="btn btn-primary" style={{ width: 'fit-content' }} onClick={() => navigate('/bookings', { state: { openModal: true } })}>
           <Plus size={20} />
           <span>{t('new_booking')}</span>
         </button>
       </header>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+      
+      <div className="grid-responsive" style={{ marginBottom: '2rem' }}>
         {stats.map((stat, index) => <StatCard key={index} {...stat} />)}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '1.5rem' }}>
+      
+      <div className="grid-responsive" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1.5fr))' }}>
         <div className="card">
-          <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1.5rem' }}>{t('revenue_stats')}</h2>
-          <div style={{ width: '100%', height: '300px' }}>
+          <h2 className="h2" style={{ marginBottom: '1.5rem' }}>{t('revenue_stats')}</h2>
+          <div style={{ width: '100%', height: '300px', direction: 'ltr' }}>
             <ResponsiveContainer width="99%" height="100%">
               <AreaChart data={chartData}>
                 <defs>
@@ -120,17 +122,38 @@ const Dashboard = () => {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+                <XAxis 
+                  dataKey="name" 
+                  stroke="var(--text-secondary)" 
+                  fontSize={12} 
+                  tickLine={false} 
+                  axisLine={false}
+                  reversed={lang === 'ar'}
+                />
+                <YAxis 
+                  stroke="var(--text-secondary)" 
+                  fontSize={12} 
+                  tickLine={false} 
+                  axisLine={false}
+                  orientation={lang === 'ar' ? 'right' : 'left'}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'var(--bg-secondary)', 
+                    borderColor: 'var(--border)', 
+                    color: 'var(--text-primary)',
+                    textAlign: lang === 'ar' ? 'right' : 'left'
+                  }} 
+                />
                 <Area type="monotone" dataKey="revenue" stroke="var(--accent)" fillOpacity={1} fill="url(#colorRevenue)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
+        
         <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <h2 style={{ fontSize: '1.125rem', fontWeight: 600 }}>{t('upcoming_events')}</h2>
+          <div className="flex-between" style={{ marginBottom: '1.5rem' }}>
+            <h2 className="h2" style={{ fontSize: '1.125rem' }}>{t('upcoming_events')}</h2>
             <button 
               className="btn btn-ghost" 
               style={{ fontSize: '0.75rem' }}
@@ -139,15 +162,15 @@ const Dashboard = () => {
               {t('view_all')}
             </button>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div className="flex-column" style={{ gap: '1rem' }}>
             {upcomingEvents.map((event, index) => (
               <div key={index} style={{ paddingBottom: '1rem', borderBottom: index !== upcomingEvents.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' }}>
+                <div className="flex-between" style={{ marginBottom: '0.25rem' }}>
                   <p style={{ fontWeight: 600 }}>{event.client}</p>
                   <span className={`badge ${event.status === 'Confirmed' ? 'badge-success' : 'badge-warning'}`}>{event.status}</span>
                 </div>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{event.package}</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
+                <p className="text-mute" style={{ fontSize: '0.75rem', marginBottom: '0.5rem' }}>{event.package}</p>
+                <div className="flex-wrap" style={{ gap: '1rem', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><CalendarClock size={14} /><span>{event.date}</span></div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Clock size={14} /><span>{event.time}</span></div>
                 </div>

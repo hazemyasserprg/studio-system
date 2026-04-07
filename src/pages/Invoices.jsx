@@ -133,29 +133,29 @@ const Invoices = () => {
         onCancel={() => setIsConfirmOpen(false)}
       />
 
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <div>
-          <h1 style={{ fontSize: '2rem', fontWeight: 700 }}>{t('invoices_title')}</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>{t('invoices_subtitle')}</p>
+      <header className="flex-between-responsive" style={{ marginBottom: '2rem', gap: '1.5rem' }}>
+        <div style={{ flex: 1 }}>
+          <h1 className="h1">{t('invoices_title')}</h1>
+          <p className="text-mute">{t('invoices_subtitle')}</p>
         </div>
-        <button onClick={() => setIsModalOpen(true)} className="btn btn-primary">
+        <button onClick={() => setIsModalOpen(true)} className="btn btn-primary" style={{ width: 'fit-content' }}>
           <Plus size={20} />
           <span>{t('create_invoice')}</span>
         </button>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
+      <div className="grid-responsive" style={{ marginBottom: '2rem' }}>
         <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', padding: '0.75rem', borderRadius: '10px' }}><CheckCircle size={24} /></div>
-          <div><p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{t('paid_amount')}</p><p style={{ fontSize: '1.5rem', fontWeight: 700 }}>${stats.totalPaid.toLocaleString()}</p></div>
+          <div><p className="text-mute" style={{ fontSize: '0.875rem' }}>{t('paid_amount')}</p><p style={{ fontSize: '1.5rem', fontWeight: 700 }}>${stats.totalPaid.toLocaleString()}</p></div>
         </div>
         <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <div style={{ background: 'rgba(245, 158, 11, 0.1)', color: 'var(--warning)', padding: '0.75rem', borderRadius: '10px' }}><Clock size={24} /></div>
-          <div><p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{t('outstanding')}</p><p style={{ fontSize: '1.5rem', fontWeight: 700 }}>${stats.outstanding.toLocaleString()}</p></div>
+          <div><p className="text-mute" style={{ fontSize: '0.875rem' }}>{t('outstanding')}</p><p style={{ fontSize: '1.5rem', fontWeight: 700 }}>${stats.outstanding.toLocaleString()}</p></div>
         </div>
         <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', padding: '0.75rem', borderRadius: '10px' }}><DollarSign size={24} /></div>
-          <div><p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{t('overdue')}</p><p style={{ fontSize: '1.5rem', fontWeight: 700 }}>${stats.overdue.toLocaleString()}</p></div>
+          <div><p className="text-mute" style={{ fontSize: '0.875rem' }}>{t('overdue')}</p><p style={{ fontSize: '1.5rem', fontWeight: 700 }}>${stats.overdue.toLocaleString()}</p></div>
         </div>
       </div>
 
@@ -181,12 +181,12 @@ const Invoices = () => {
               <tbody>
                 {invoices.map((inv) => (
                   <tr key={inv.id}>
-                    <td style={{ fontWeight: 600, color: 'var(--accent)' }}>{inv.id}</td>
-                    <td>{inv.clients?.name || 'Unknown'}</td>
-                    <td>${Number(inv.amount).toLocaleString()}</td>
-                    <td>${Number(inv.paid).toLocaleString()}</td>
-                    <td>{inv.due_date || 'N/A'}</td>
-                    <td><span className={`badge ${getStatusBadge(inv.status)}`}>{tStatus(inv.status)}</span></td>
+                    <td style={{ fontWeight: 600, color: 'var(--accent)', textAlign: 'inherit' }}>{inv.id}</td>
+                    <td style={{ textAlign: 'inherit' }}>{inv.clients?.name || 'Unknown'}</td>
+                    <td style={{ textAlign: 'inherit' }}>${Number(inv.amount).toLocaleString()}</td>
+                    <td style={{ textAlign: 'inherit' }}>${Number(inv.paid).toLocaleString()}</td>
+                    <td style={{ textAlign: 'inherit' }}>{inv.due_date || 'N/A'}</td>
+                    <td style={{ textAlign: 'inherit' }}><span className={`badge ${getStatusBadge(inv.status)}`}>{tStatus(inv.status)}</span></td>
                     <td>
                       <div style={{ display: 'flex', gap: '0.5rem', justifyContent: lang === 'ar' ? 'flex-start' : 'flex-end' }}>
                         <button 
@@ -238,7 +238,7 @@ const Invoices = () => {
       <AnimatePresence>
         {isModalOpen && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="card" style={{ width: '100%', maxWidth: '500px', padding: '2rem', overflow: 'visible' }}>
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="card" style={{ width: '90%', maxWidth: '500px', padding: '2rem', overflow: 'visible', margin: '1rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>{t('create_invoice')}</h2>
                 <button onClick={() => setIsModalOpen(false)} className="btn btn-ghost"><X size={20} /></button>

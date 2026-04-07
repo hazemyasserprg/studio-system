@@ -135,12 +135,12 @@ const Reports = () => {
     >
       <Toast message={toastMessage} onClose={() => setToastMessage('')} />
 
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <div>
-          <h1 style={{ fontSize: '2rem', fontWeight: 700 }}>{t('reports_title')}</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>{t('reports_subtitle')}</p>
+      <header className="flex-between-responsive" style={{ marginBottom: '2rem', gap: '1.5rem' }}>
+        <div style={{ flex: 1 }}>
+          <h1 className="h1">{t('reports_title')}</h1>
+          <p className="text-mute">{t('reports_subtitle')}</p>
         </div>
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div className="flex-wrap" style={{ gap: '0.75rem' }}>
           <button onClick={handleExportCSV} className="btn btn-ghost" style={{ border: '1px solid var(--border)' }}>
             <FileSpreadsheet size={20} />
             <span>{t('export_csv')}</span>
@@ -152,31 +152,51 @@ const Reports = () => {
         </div>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+      <div className="grid-responsive" style={{ marginBottom: '2rem' }}>
         <div className="card">
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('total_revenue_paid')}</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}><h2 style={{ fontSize: '2rem', fontWeight: 700 }}>${stats.revenue.toLocaleString()}</h2><div className="badge badge-success">{t('realtime_badge')}</div></div>
+          <p className="text-mute" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>{t('total_revenue_paid')}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}><h2 style={{ fontSize: '2rem', fontWeight: 700 }}>${stats.revenue.toLocaleString()}</h2><div className="badge badge-success">{t('realtime_badge')}</div></div>
         </div>
         <div className="card">
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('outstanding_dues')}</p>
+          <p className="text-mute" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>{t('outstanding_dues')}</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}><h2 style={{ fontSize: '2rem', fontWeight: 700 }}>${stats.outstanding.toLocaleString()}</h2></div>
         </div>
         <div className="card">
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{t('total_sessions')}</p>
+          <p className="text-mute" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>{t('total_sessions')}</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}><h2 style={{ fontSize: '2rem', fontWeight: 700 }}>{stats.sessions}</h2></div>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '1.5rem', minHeight: '400px' }}>
+      <div className="grid-responsive" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1.5fr))', minHeight: '400px' }}>
         <div className="card">
-          <h2 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1.5rem' }}>{t('revenue_by_category')}</h2>
-          <div style={{ width: '100%', height: '300px' }}>
+          <h2 className="h2" style={{ marginBottom: '1.5rem' }}>{t('revenue_by_category')}</h2>
+          <div style={{ width: '100%', height: '300px', direction: 'ltr' }}>
             <ResponsiveContainer width="99%" height="100%">
-              <BarChart data={data} layout={lang === 'ar' ? 'horizontal' : 'horizontal'}>
+              <BarChart data={data}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} reversed={lang === 'ar'} />
-                <YAxis stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} orientation={lang === 'ar' ? 'right' : 'left'} />
-                <Tooltip contentStyle={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text-primary)', textAlign: lang === 'ar' ? 'right' : 'left' }} />
+                <XAxis 
+                  dataKey="name" 
+                  stroke="var(--text-secondary)" 
+                  fontSize={12} 
+                  tickLine={false} 
+                  axisLine={false} 
+                  reversed={lang === 'ar'} 
+                />
+                <YAxis 
+                  stroke="var(--text-secondary)" 
+                  fontSize={12} 
+                  tickLine={false} 
+                  axisLine={false} 
+                  orientation={lang === 'ar' ? 'right' : 'left'} 
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'var(--bg-secondary)', 
+                    borderColor: 'var(--border)', 
+                    color: 'var(--text-primary)', 
+                    textAlign: lang === 'ar' ? 'right' : 'left' 
+                  }} 
+                />
                 <Bar dataKey="value" fill="var(--accent)" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>

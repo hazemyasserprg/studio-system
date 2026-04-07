@@ -49,11 +49,16 @@ const Sidebar = ({ onLogout, isCollapsed, setIsCollapsed }) => {
 
   return (
     <>
+      <div 
+        className={`sidebar-overlay ${!isCollapsed ? 'visible' : ''}`} 
+        onClick={() => setIsCollapsed(true)}
+      />
+      
       <button className="mobile-toggle" onClick={() => setIsCollapsed(!isCollapsed)}>
         <Menu size={24} />
       </button>
 
-      <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+      <aside className={`sidebar ${isCollapsed ? 'collapsed' : 'mobile-open'}`}>
         <button
           className="collapse-btn"
           onClick={() => setIsCollapsed(!isCollapsed)}
@@ -92,6 +97,9 @@ const Sidebar = ({ onLogout, isCollapsed, setIsCollapsed }) => {
               to={item.path}
               className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
               title={isCollapsed ? item.name : ''}
+              onClick={() => {
+                if (window.innerWidth <= 1024) setIsCollapsed(true);
+              }}
             >
               <item.icon size={20} />
               {!isCollapsed && <span>{item.name}</span>}
@@ -101,7 +109,10 @@ const Sidebar = ({ onLogout, isCollapsed, setIsCollapsed }) => {
 
         <div className="sidebar-footer">
           <button 
-            onClick={() => setLang(lang === 'en' ? 'ar' : 'en')} 
+            onClick={() => {
+              setLang(lang === 'en' ? 'ar' : 'en');
+              if (window.innerWidth <= 1024) setIsCollapsed(true);
+            }} 
             className="nav-link" 
             title={isCollapsed ? t('language') : ''}
             style={{ border: 'none', background: 'transparent', cursor: 'pointer', textAlign: 'inherit' }}
@@ -110,12 +121,26 @@ const Sidebar = ({ onLogout, isCollapsed, setIsCollapsed }) => {
             {!isCollapsed && <span>{lang === 'en' ? 'العربية' : 'English'}</span>}
           </button>
           
-          <NavLink to="/settings" className="nav-link" title={isCollapsed ? t('settings') : ''}>
+          <NavLink 
+            to="/settings" 
+            className="nav-link" 
+            title={isCollapsed ? t('settings') : ''}
+            onClick={() => {
+              if (window.innerWidth <= 1024) setIsCollapsed(true);
+            }}
+          >
             <Settings size={20} />
             {!isCollapsed && <span>{t('settings')}</span>}
           </NavLink>
           
-          <button onClick={onLogout} className="nav-link logout-btn" title={isCollapsed ? t('logout') : ''}>
+          <button 
+            onClick={() => {
+              onLogout();
+              if (window.innerWidth <= 1024) setIsCollapsed(true);
+            }} 
+            className="nav-link logout-btn" 
+            title={isCollapsed ? t('logout') : ''}
+          >
             <LogOut size={20} />
             {!isCollapsed && <span>{t('logout')}</span>}
           </button>

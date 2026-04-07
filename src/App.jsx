@@ -22,9 +22,7 @@ function App() {
     // Auto-collapse sidebar on smaller screens
     const handleResize = () => {
       if (window.innerWidth <= 1024) {
-        setIsCollapsed(true);
-      } else {
-        setIsCollapsed(false);
+        setIsCollapsed(true); // Hidden on mobile by default
       }
     };
     

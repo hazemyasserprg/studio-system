@@ -15,7 +15,7 @@ const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel }) => {
             animate={{ scale: 1, opacity: 1 }} 
             exit={{ scale: 0.9, opacity: 0 }}
             className="card" 
-            style={{ width: '100%', maxWidth: '400px', padding: '2rem', textAlign: 'center' }}
+            style={{ width: 'min(90%, 400px)', padding: '2rem', textAlign: 'center', margin: '1rem' }}
           >
             <div style={{ 
               background: 'rgba(239, 68, 68, 0.1)', 

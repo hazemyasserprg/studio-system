@@ -94,10 +94,10 @@ const Packages = () => {
       <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'success' })} />
       <ConfirmModal isOpen={isConfirmOpen} title={t('delete_confirm_title')} message={t('delete_confirm_msg')} onConfirm={handleDelete} onCancel={() => setIsConfirmOpen(false)} />
 
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+      <header className="flex-between-responsive" style={{ marginBottom: '2rem' }}>
         <div>
-          <h1 style={{ fontSize: '2rem', fontWeight: 700 }}>{t('packages_title')}</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>{t('packages_subtitle')}</p>
+          <h1 className="h1">{t('packages_title')}</h1>
+          <p className="text-mute">{t('packages_subtitle')}</p>
         </div>
         <button onClick={() => handleOpenModal()} className="btn btn-primary"><Plus size={20} /><span>{t('add_package')}</span></button>
       </header>
@@ -127,7 +127,7 @@ const Packages = () => {
       <AnimatePresence>
         {isModalOpen && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="card" style={{ width: '100%', maxWidth: '500px', padding: '2rem' }}>
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="card" style={{ width: '90%', maxWidth: '500px', padding: '2rem', margin: '1rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>{editingPkg ? t('edit_package') : t('new_package')}</h2>
                 <button onClick={() => setIsModalOpen(false)} className="btn btn-ghost"><X size={20} /></button>

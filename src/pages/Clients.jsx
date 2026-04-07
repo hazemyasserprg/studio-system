@@ -136,19 +136,19 @@ const Clients = () => {
         onCancel={() => setIsConfirmOpen(false)}
       />
 
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <div>
-          <h1 style={{ fontSize: '2rem', fontWeight: 700 }}>{t('clients_title')}</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>{t('clients_subtitle')}</p>
+      <header className="flex-between-responsive" style={{ marginBottom: '2rem', gap: '1.5rem' }}>
+        <div style={{ flex: 1 }}>
+          <h1 className="h1">{t('clients_title')}</h1>
+          <p className="text-mute">{t('clients_subtitle')}</p>
         </div>
-        <button onClick={() => handleOpenModal()} className="btn btn-primary">
+        <button onClick={() => handleOpenModal()} className="btn btn-primary" style={{ width: 'fit-content' }}>
           <UserPlus size={20} />
           <span>{t('add_client')}</span>
         </button>
       </header>
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', gap: '1rem' }}>
+        <div className="filter-bar">
           <div style={{ position: 'relative', flex: 1 }}>
             <Search size={18} style={{ position: 'absolute', [lang === 'ar' ? 'left' : 'right']: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
             <input
@@ -202,10 +202,10 @@ const Clients = () => {
               <tbody>
                 {filteredClients.map((client) => (
                   <tr key={client.id}>
-                    <td style={{ fontWeight: 600 }}>{client.name}</td>
-                    <td><div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Phone size={14} /><span>{client.phone || 'N/A'}</span></div></td>
-                    <td><span className={`badge ${getStatusBadge(client.status)}`}>{t(client.status.toLowerCase())}</span></td>
-                    <td><div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Calendar size={14} /><span>{new Date(client.created_at).toLocaleDateString()}</span></div></td>
+                    <td style={{ fontWeight: 600, textAlign: 'inherit' }}>{client.name}</td>
+                    <td style={{ textAlign: 'inherit' }}><div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'inherit' }}><Phone size={14} /><span>{client.phone || 'N/A'}</span></div></td>
+                    <td style={{ textAlign: 'inherit' }}><span className={`badge ${getStatusBadge(client.status)}`}>{t(client.status.toLowerCase())}</span></td>
+                    <td style={{ textAlign: 'inherit' }}><div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'inherit' }}><Calendar size={14} /><span>{new Date(client.created_at).toLocaleDateString()}</span></div></td>
                     <td>
                       <div style={{ display: 'flex', gap: '0.5rem', justifyContent: lang === 'ar' ? 'flex-start' : 'flex-end' }}>
                         <button onClick={() => handleOpenModal(client)} className="btn btn-ghost" style={{ padding: '0.5rem' }}><Edit2 size={16} /></button>
@@ -229,7 +229,7 @@ const Clients = () => {
               animate="animate" 
               exit="exit" 
               className="card" 
-              style={{ width: '100%', maxWidth: '500px', padding: '2rem', position: 'relative', overflow: 'visible' }}
+              style={{ width: '90%', maxWidth: '500px', padding: '2rem', position: 'relative', overflow: 'visible', margin: '1rem' }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>{editingId ? t('edit_client') : t('new_client')}</h2>

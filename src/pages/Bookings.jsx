@@ -91,16 +91,19 @@ const Bookings = () => {
       <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'success' })} />
       <ConfirmModal isOpen={isConfirmOpen} title={t('delete_confirm_title')} message={t('delete_confirm_msg')} onConfirm={handleDelete} onCancel={() => setIsConfirmOpen(false)} />
 
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <div>
-          <h1 style={{ fontSize: '2rem', fontWeight: 700 }}>{t('bookings_title')}</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>{t('bookings_subtitle')}</p>
+      <header className="flex-between-responsive" style={{ marginBottom: '2rem', gap: '1.5rem' }}>
+        <div style={{ flex: 1 }}>
+          <h1 className="h1">{t('bookings_title')}</h1>
+          <p className="text-mute">{t('bookings_subtitle')}</p>
         </div>
-        <button onClick={() => setIsModalOpen(true)} className="btn btn-primary"><Plus size={20} /><span>{t('add_booking')}</span></button>
+        <button onClick={() => setIsModalOpen(true)} className="btn btn-primary" style={{ width: 'fit-content' }}>
+          <Plus size={20} />
+          <span>{t('add_booking')}</span>
+        </button>
       </header>
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="flex-between" style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)' }}>
           <h3 style={{ fontSize: '1.125rem', fontWeight: 600 }}>{t('all_sessions')}</h3>
           <div className="badge badge-accent">{bookings.length} {t('sessions')}</div>
         </div>
@@ -117,18 +120,18 @@ const Bookings = () => {
               </tr>
             </thead>
             <tbody>
-              {bookings.map((b) => (
+               {bookings.map((b) => (
                 <tr key={b.id}>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <td style={{ textAlign: 'inherit' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', justifyContent: 'inherit' }}>
                       <div style={{ background: 'var(--bg-surface)', padding: '0.5rem', borderRadius: '8px', color: 'var(--accent)' }}><User size={16} /></div>
-                      <div><p style={{ fontWeight: 600 }}>{b.clients?.name}</p><p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{b.clients?.phone}</p></div>
+                      <div style={{ textAlign: 'inherit' }}><p style={{ fontWeight: 600 }}>{b.clients?.name}</p><p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{b.clients?.phone}</p></div>
                     </div>
                   </td>
-                  <td><div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><PkgIcon size={14} className="text-secondary" /><span>{b.packages?.name}</span></div></td>
-                  <td><div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Clock size={14} className="text-secondary" /><span>{new Date(b.event_date).toLocaleDateString()}</span></div></td>
-                  <td style={{ fontWeight: 600 }}>${b.total_price}</td>
-                  <td><span className={`badge ${b.status === 'Confirmed' ? 'badge-success' : 'badge-warning'}`}>{t(b.status.toLowerCase())}</span></td>
+                  <td style={{ textAlign: 'inherit' }}><div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'inherit' }}><PkgIcon size={14} className="text-secondary" /><span>{b.packages?.name}</span></div></td>
+                  <td style={{ textAlign: 'inherit' }}><div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'inherit' }}><Clock size={14} className="text-secondary" /><span>{new Date(b.event_date).toLocaleDateString()}</span></div></td>
+                  <td style={{ fontWeight: 600, textAlign: 'inherit' }}>${b.total_price}</td>
+                  <td style={{ textAlign: 'inherit' }}><span className={`badge ${b.status === 'Confirmed' ? 'badge-success' : 'badge-warning'}`}>{t(b.status.toLowerCase())}</span></td>
                   <td>
                     <div style={{ display: 'flex', gap: '0.5rem', justifyContent: lang === 'ar' ? 'flex-start' : 'flex-end' }}>
                       <button onClick={() => { setDeletingId(b.id); setIsConfirmOpen(true); }} className="btn btn-ghost" style={{ padding: '0.5rem', color: 'var(--danger)' }}><Trash2 size={18} /></button>
@@ -145,7 +148,7 @@ const Bookings = () => {
       <AnimatePresence>
         {isModalOpen && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
-             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="card" style={{ width: '100%', maxWidth: '500px', padding: '2rem', overflow: 'visible' }}>
+             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="card" style={{ width: '90%', maxWidth: '500px', padding: '2rem', overflow: 'visible', margin: '1rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>{t('confirm_booking')}</h2>
                 <button onClick={() => setIsModalOpen(false)} className="btn btn-ghost"><X size={20} /></button>

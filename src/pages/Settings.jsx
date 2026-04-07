@@ -92,10 +92,10 @@ const Settings = () => {
     >
       <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false, message: '' })} />
 
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+      <header className="flex-between-responsive" style={{ marginBottom: '2rem' }}>
         <div>
-          <h1 style={{ fontSize: '2rem', fontWeight: 700 }}>{t('settings')}</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>{t('settings_subtitle') || 'Manage your studio preferences.'}</p>
+          <h1 className="h1">{t('settings')}</h1>
+          <p className="text-mute">{t('settings_subtitle') || 'Manage your studio preferences.'}</p>
         </div>
         <button onClick={handleSave} className="btn btn-primary" disabled={isLoading}>
           {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
@@ -103,7 +103,7 @@ const Settings = () => {
         </button>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem' }}>
+      <div className="grid-responsive">
         {/* Studio Identity */}
         <section className="card">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
