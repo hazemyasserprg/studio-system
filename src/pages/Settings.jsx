@@ -6,7 +6,7 @@ import Toast from '../components/common/Toast';
 
 const Settings = () => {
   const { lang, setLang, t } = useTranslation();
-  const [isDarkMode, setIsDarkMode] = useState(document.body.classList.contains('dark-theme'));
+  const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem('dark_mode') === 'true');
   const [studioName, setStudioName] = useState(localStorage.getItem('studio_name') || 'StudioBiz');
   const [studioEmail, setStudioEmail] = useState(localStorage.getItem('studio_email') || 'contact@studiobiz.com');
   const [accentColor, setAccentColor] = useState(localStorage.getItem('studio_color') || '#6366f1');
@@ -23,7 +23,7 @@ const Settings = () => {
 
   useEffect(() => {
     document.body.classList.toggle('dark-theme', isDarkMode);
-    localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+    localStorage.setItem('dark_mode', isDarkMode);
   }, [isDarkMode]);
 
   const handleLogoUpload = (e) => {

@@ -33,10 +33,10 @@ function App() {
     
     // Apply theme from localStorage
     const savedTheme = localStorage.getItem('dark_mode');
-    if (savedTheme === 'false' || !savedTheme) {
-      document.body.classList.remove('dark-theme');
-    } else {
+    if (savedTheme === 'true') {
       document.body.classList.add('dark-theme');
+    } else {
+      document.body.classList.remove('dark-theme');
     }
     
     const savedColor = localStorage.getItem('studio_color');
