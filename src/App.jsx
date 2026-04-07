@@ -78,13 +78,16 @@ function App() {
     );
   }
 
-  if (!isAuthenticated) {
-    return <Login onLogin={() => setIsAuthenticated(true)} />;
-  }
-
   return (
     <Router>
-      <AppContent isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} handleLogout={handleLogout} />
+      {!isAuthenticated ? (
+        <>
+          <Navigate to="/" replace />
+          <Login onLogin={() => setIsAuthenticated(true)} />
+        </>
+      ) : (
+        <AppContent isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} handleLogout={handleLogout} />
+      )}
     </Router>
   );
 }
