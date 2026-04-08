@@ -11,7 +11,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
-  Languages
+  Languages,
+  Wallet
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
@@ -44,6 +45,7 @@ const Sidebar = ({ onLogout, isCollapsed, setIsCollapsed }) => {
     { name: t('packages'), path: '/packages', icon: Package },
     { name: t('bookings'), path: '/bookings', icon: CalendarClock },
     { name: t('invoices'), path: '/invoices', icon: FileText },
+    { name: t('expenses'), path: '/expenses', icon: Wallet },
     { name: t('reports'), path: '/reports', icon: BarChart3 },
   ];
 

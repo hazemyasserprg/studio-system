@@ -95,6 +95,12 @@ body {
   gap: 1.5rem;
 }
 
+.flex-between-responsive {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 @media (max-width: 768px) {
   .grid-responsive {
     grid-template-columns: 1fr;

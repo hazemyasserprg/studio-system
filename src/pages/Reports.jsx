@@ -14,7 +14,8 @@ const Reports = () => {
   const { lang, t } = useTranslation();
   const [isLoading, setIsLoading] = useState(true);
   const [data, setData] = useState([]);
-  const [stats, setStats] = useState({ revenue: 0, outstanding: 0, sessions: 0 });
+  const [expenseData, setExpenseData] = useState([]);
+  const [stats, setStats] = useState({ revenue: 0, outstanding: 0, sessions: 0, expenses: 0, profit: 0 });
   const [toastMessage, setToastMessage] = useState('');
 
   // Animation variants
@@ -29,6 +30,7 @@ const Reports = () => {
     try {
       const { data: bookingData } = await supabase.from('bookings').select('*, packages(name)');
       const { data: invoiceData } = await supabase.from('invoices').select('*');
+      const { data: expenseRecords } = await supabase.from('expenses').select('*');
 
       const groupedData = bookingData?.reduce((acc, b) => {
         const pkgName = b.packages?.name || 'Uncategorized';
@@ -38,14 +40,26 @@ const Reports = () => {
         return acc;
       }, {}) || {};
 
+      const groupedExpenses = expenseRecords?.reduce((acc, ex) => {
+        const cat = t(`cat_${ex.category}`);
+        if (!acc[cat]) acc[cat] = { name: cat, value: 0 };
+        acc[cat].value += Number(ex.amount);
+        return acc;
+      }, {}) || {};
+
       setData(Object.values(groupedData));
+      setExpenseData(Object.values(groupedExpenses));
 
       const totalPaid = invoiceData?.reduce((acc, inv) => acc + (Number(inv.paid) || 0), 0) || 0;
       const totalRevenue = invoiceData?.reduce((acc, inv) => acc + (Number(inv.amount) || 0), 0) || 0;
+      const totalExpenses = expenseRecords?.reduce((acc, ex) => acc + (Number(ex.amount) || 0), 0) || 0;
+
       setStats({
         revenue: totalPaid,
         outstanding: totalRevenue - totalPaid,
-        sessions: bookingData?.length || 0
+        sessions: bookingData?.length || 0,
+        expenses: totalExpenses,
+        profit: totalPaid - totalExpenses
       });
     } catch (err) {
       console.error(err);
@@ -95,6 +109,8 @@ const Reports = () => {
         head: [[t('metric'), t('value')]],
         body: [
           [t('total_revenue_paid'), `$${stats.revenue.toLocaleString()}`],
+          [t('total_expenses'), `$${stats.expenses.toLocaleString()}`],
+          [t('net_profit'), `$${stats.profit.toLocaleString()}`],
           [t('outstanding_dues'), `$${stats.outstanding.toLocaleString()}`],
           [t('total_sessions'), stats.sessions.toString()]
         ],
@@ -152,22 +168,26 @@ const Reports = () => {
         </div>
       </header>
 
-      <div className="grid-responsive" style={{ marginBottom: '2rem' }}>
+      <div className="grid-responsive" style={{ marginBottom: '2rem', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
         <div className="card">
           <p className="text-mute" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>{t('total_revenue_paid')}</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}><h2 style={{ fontSize: '2rem', fontWeight: 700 }}>${stats.revenue.toLocaleString()}</h2><div className="badge badge-success">{t('realtime_badge')}</div></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}><h2 style={{ fontSize: '1.75rem', fontWeight: 700 }}>${stats.revenue.toLocaleString()}</h2><div className="badge badge-success" style={{ fontSize: '0.65rem' }}>{t('realtime_badge')}</div></div>
+        </div>
+        <div className="card">
+          <p className="text-mute" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>{t('total_expenses')}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}><h2 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--danger)' }}>${stats.expenses.toLocaleString()}</h2></div>
+        </div>
+        <div className="card" style={{ border: '2px solid var(--accent)' }}>
+          <p className="text-mute" style={{ fontSize: '0.875rem', marginBottom: '0.5rem', fontWeight: 700 }}>{t('net_profit')}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}><h2 style={{ fontSize: '2rem', fontWeight: 800, color: stats.profit >= 0 ? 'var(--success)' : 'var(--danger)' }}>${stats.profit.toLocaleString()}</h2></div>
         </div>
         <div className="card">
           <p className="text-mute" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>{t('outstanding_dues')}</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}><h2 style={{ fontSize: '2rem', fontWeight: 700 }}>${stats.outstanding.toLocaleString()}</h2></div>
-        </div>
-        <div className="card">
-          <p className="text-mute" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>{t('total_sessions')}</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}><h2 style={{ fontSize: '2rem', fontWeight: 700 }}>{stats.sessions}</h2></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}><h2 style={{ fontSize: '1.75rem', fontWeight: 700 }}>${stats.outstanding.toLocaleString()}</h2></div>
         </div>
       </div>
 
-      <div className="grid-responsive" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1.5fr))', minHeight: '400px' }}>
+      <div className="grid-responsive" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', minHeight: '400px' }}>
         <div className="card">
           <h2 className="h2" style={{ marginBottom: '1.5rem' }}>{t('revenue_by_category')}</h2>
           <div style={{ width: '100%', height: '300px', direction: 'ltr' }}>
@@ -198,6 +218,41 @@ const Reports = () => {
                   }} 
                 />
                 <Bar dataKey="value" fill="var(--accent)" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="card">
+          <h2 className="h2" style={{ marginBottom: '1.5rem' }}>{t('expenses_title')}</h2>
+          <div style={{ width: '100%', height: '300px', direction: 'ltr' }}>
+            <ResponsiveContainer width="99%" height="100%">
+              <BarChart data={expenseData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis 
+                  dataKey="name" 
+                  stroke="var(--text-secondary)" 
+                  fontSize={12} 
+                  tickLine={false} 
+                  axisLine={false} 
+                  reversed={lang === 'ar'} 
+                />
+                <YAxis 
+                  stroke="var(--text-secondary)" 
+                  fontSize={12} 
+                  tickLine={false} 
+                  axisLine={false} 
+                  orientation={lang === 'ar' ? 'right' : 'left'} 
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'var(--bg-secondary)', 
+                    borderColor: 'var(--border)', 
+                    color: 'var(--text-primary)', 
+                    textAlign: lang === 'ar' ? 'right' : 'left' 
+                  }} 
+                />
+                <Bar dataKey="value" fill="var(--danger)" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

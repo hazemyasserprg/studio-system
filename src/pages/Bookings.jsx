@@ -8,6 +8,18 @@ import CustomSelect from '../components/common/CustomSelect';
 import CustomDatePicker from '../components/common/CustomDatePicker';
 import ConfirmModal from '../components/common/ConfirmModal';
 import { useTranslation } from '../context/LanguageContext';
+import { 
+  format, 
+  startOfMonth, 
+  endOfMonth, 
+  startOfWeek, 
+  endOfWeek, 
+  addDays, 
+  isSameMonth, 
+  isSameDay, 
+  addMonths, 
+  subMonths 
+} from 'date-fns';
 
 const Bookings = () => {
   const { lang, t } = useTranslation();
@@ -17,6 +29,28 @@ const Bookings = () => {
   const [packages, setPackages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState('calendar'); // Default to calendar
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  const daysOfWeek = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+  
+  const calendarDays = (() => {
+    const start = startOfMonth(currentDate);
+    const end = endOfMonth(currentDate);
+    const startDate = startOfWeek(start);
+    const endDate = endOfWeek(end);
+    
+    const days = [];
+    let day = startDate;
+    while (day <= endDate) {
+      days.push(day);
+      day = addDays(day, 1);
+    }
+    return days;
+  })();
+
+  const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
+  const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
 
   // UI State
   const [toast, setToast] = useState({ message: '', type: 'success' });
@@ -96,54 +130,171 @@ const Bookings = () => {
           <h1 className="h1">{t('bookings_title')}</h1>
           <p className="text-mute">{t('bookings_subtitle')}</p>
         </div>
-        <button onClick={() => setIsModalOpen(true)} className="btn btn-primary" style={{ width: 'fit-content' }}>
-          <Plus size={20} />
-          <span>{t('add_booking')}</span>
-        </button>
+        <div className="flex-wrap" style={{ gap: '0.75rem' }}>
+          <div className="card" style={{ padding: '0.25rem', display: 'flex', gap: '0.25rem', marginBottom: 0 }}>
+            <button 
+              onClick={() => setViewMode('calendar')} 
+              className={`btn ${viewMode === 'calendar' ? 'btn-primary' : 'btn-ghost'}`}
+              style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
+            >
+              {t('calendar_view')}
+            </button>
+            <button 
+              onClick={() => setViewMode('list')} 
+              className={`btn ${viewMode === 'list' ? 'btn-primary' : 'btn-ghost'}`}
+              style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
+            >
+              {t('list_view')}
+            </button>
+          </div>
+          <button onClick={() => setIsModalOpen(true)} className="btn btn-primary" style={{ width: 'fit-content' }}>
+            <Plus size={20} />
+            <span>{t('add_booking')}</span>
+          </button>
+        </div>
       </header>
 
-      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div className="flex-between" style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)' }}>
-          <h3 style={{ fontSize: '1.125rem', fontWeight: 600 }}>{t('all_sessions')}</h3>
-          <div className="badge badge-accent">{bookings.length} {t('sessions')}</div>
-        </div>
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>{t('client')}</th>
-                <th>{t('package')}</th>
-                <th>{t('event_date')}</th>
-                <th>{t('amount')}</th>
-                <th>{t('status')}</th>
-                <th style={{ textAlign: lang === 'ar' ? 'left' : 'right' }}>{t('actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
-               {bookings.map((b) => (
-                <tr key={b.id}>
-                  <td style={{ textAlign: 'inherit' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', justifyContent: 'inherit' }}>
-                      <div style={{ background: 'var(--bg-surface)', padding: '0.5rem', borderRadius: '8px', color: 'var(--accent)' }}><User size={16} /></div>
-                      <div style={{ textAlign: 'inherit' }}><p style={{ fontWeight: 600 }}>{b.clients?.name}</p><p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{b.clients?.phone}</p></div>
-                    </div>
-                  </td>
-                  <td style={{ textAlign: 'inherit' }}><div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'inherit' }}><PkgIcon size={14} className="text-secondary" /><span>{b.packages?.name}</span></div></td>
-                  <td style={{ textAlign: 'inherit' }}><div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'inherit' }}><Clock size={14} className="text-secondary" /><span>{new Date(b.event_date).toLocaleDateString()}</span></div></td>
-                  <td style={{ fontWeight: 600, textAlign: 'inherit' }}>${b.total_price}</td>
-                  <td style={{ textAlign: 'inherit' }}><span className={`badge ${b.status === 'Confirmed' ? 'badge-success' : 'badge-warning'}`}>{t(b.status.toLowerCase())}</span></td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: lang === 'ar' ? 'flex-start' : 'flex-end' }}>
-                      <button onClick={() => { setDeletingId(b.id); setIsConfirmOpen(true); }} className="btn btn-ghost" style={{ padding: '0.5rem', color: 'var(--danger)' }}><Trash2 size={18} /></button>
-                    </div>
-                  </td>
+      {viewMode === 'list' ? (
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div className="flex-between" style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)' }}>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: 600 }}>{t('all_sessions')}</h3>
+            <div className="badge badge-accent">{bookings.length} {t('sessions')}</div>
+          </div>
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>{t('client')}</th>
+                  <th>{t('package')}</th>
+                  <th>{t('event_date')}</th>
+                  <th>{t('amount')}</th>
+                  <th>{t('status')}</th>
+                  <th style={{ textAlign: lang === 'ar' ? 'left' : 'right' }}>{t('actions')}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          {bookings.length === 0 && <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>{t('no_events')}</div>}
+              </thead>
+              <tbody>
+                {bookings.map((b) => (
+                  <tr key={b.id}>
+                    <td style={{ textAlign: 'inherit' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', justifyContent: 'inherit' }}>
+                        <div style={{ background: 'var(--bg-surface)', padding: '0.5rem', borderRadius: '8px', color: 'var(--accent)' }}><User size={16} /></div>
+                        <div style={{ textAlign: 'inherit' }}><p style={{ fontWeight: 600 }}>{b.clients?.name}</p><p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{b.clients?.phone}</p></div>
+                      </div>
+                    </td>
+                    <td style={{ textAlign: 'inherit' }}><div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'inherit' }}><PkgIcon size={14} className="text-secondary" /><span>{b.packages?.name}</span></div></td>
+                    <td style={{ textAlign: 'inherit' }}><div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'inherit' }}><Clock size={14} className="text-secondary" /><span>{new Date(b.event_date).toLocaleDateString()}</span></div></td>
+                    <td style={{ fontWeight: 600, textAlign: 'inherit' }}>${b.total_price}</td>
+                    <td style={{ textAlign: 'inherit' }}><span className={`badge ${b.status === 'Confirmed' ? 'badge-success' : 'badge-warning'}`}>{t(b.status.toLowerCase())}</span></td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: lang === 'ar' ? 'flex-start' : 'flex-end' }}>
+                        <button onClick={() => { setDeletingId(b.id); setIsConfirmOpen(true); }} className="btn btn-ghost" style={{ padding: '0.5rem', color: 'var(--danger)' }}><Trash2 size={18} /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {bookings.length === 0 && <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>{t('no_events')}</div>}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="card" style={{ padding: '1.5rem' }}>
+          <div className="flex-between" style={{ marginBottom: '2rem' }}>
+            <h2 className="h2" style={{ marginBottom: 0 }}>{format(currentDate, 'MMMM yyyy')}</h2>
+            <div className="flex-wrap" style={{ gap: '0.5rem' }}>
+              <button onClick={prevMonth} className="btn btn-ghost" style={{ padding: '0.5rem' }}>&larr; {t('prev_month')}</button>
+              <button 
+                onClick={() => setCurrentDate(new Date())} 
+                className="btn btn-ghost" 
+                style={{ fontSize: '0.875rem' }}
+              >
+                Today
+              </button>
+              <button onClick={nextMonth} className="btn btn-ghost" style={{ padding: '0.5rem' }}>{t('next_month')} &rarr;</button>
+            </div>
+          </div>
+
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(7, 1fr)', 
+            border: '1px solid var(--border)',
+            borderRadius: '12px',
+            overflow: 'hidden'
+          }}>
+            {/* Days of week */}
+            {daysOfWeek.map(day => (
+              <div key={day} style={{ 
+                padding: '1rem', 
+                textAlign: 'center', 
+                fontWeight: 700, 
+                fontSize: '0.75rem', 
+                textTransform: 'uppercase',
+                background: 'var(--bg-surface)',
+                borderBottom: '1px solid var(--border)',
+                color: 'var(--text-secondary)'
+              }}>
+                {t(day)}
+              </div>
+            ))}
+
+            {/* Calendar grid */}
+            {calendarDays.map((day, i) => {
+              const dayBookings = bookings.filter(b => isSameDay(new Date(b.event_date), day));
+              const isCurrentMonth = isSameMonth(day, currentDate);
+              const isToday = isSameDay(day, new Date());
+
+              return (
+                <div key={i} style={{ 
+                  minHeight: '120px', 
+                  padding: '0.75rem', 
+                  borderRight: (i + 1) % 7 !== 0 ? '1px solid var(--border)' : 'none',
+                  borderBottom: '1px solid var(--border)',
+                  background: isCurrentMonth ? 'transparent' : 'rgba(0,0,0,0.02)',
+                  opacity: isCurrentMonth ? 1 : 0.4,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.5rem'
+                }}>
+                  <div style={{ 
+                    fontSize: '0.875rem', 
+                    fontWeight: isToday ? 800 : 500,
+                    color: isToday ? 'var(--accent)' : 'inherit',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <span>{format(day, 'd')}</span>
+                    {isToday && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent)' }}></div>}
+                  </div>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    {dayBookings.map(b => (
+                      <div 
+                        key={b.id} 
+                        style={{ 
+                          fontSize: '0.7rem', 
+                          padding: '0.25rem 0.5rem', 
+                          background: 'var(--accent-light)', 
+                          color: 'var(--accent)',
+                          borderRadius: '4px',
+                          borderLeft: '3px solid var(--accent)',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          cursor: 'pointer'
+                        }}
+                        title={`${b.clients?.name} - ${b.packages?.name}`}
+                      >
+                        {b.clients?.name}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <AnimatePresence>
         {isModalOpen && (

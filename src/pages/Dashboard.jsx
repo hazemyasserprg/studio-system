@@ -30,15 +30,20 @@ const Dashboard = () => {
       const { count: clientCount } = await supabase.from('clients').select('*', { count: 'exact', head: true });
       const { data: bookingsData } = await supabase.from('bookings').select('*, clients(name), packages(name)');
       const { data: invoicesData } = await supabase.from('invoices').select('*');
+      const { data: expensesData } = await supabase.from('expenses').select('*');
+      const totalExpenses = expensesData?.reduce((acc, ex) => acc + (Number(ex.amount) || 0), 0) || 0;
 
       const totalRevenue = invoicesData?.reduce((acc, inv) => acc + (Number(inv.paid) || 0), 0) || 0;
       const pendingInvoicesAmount = invoicesData?.filter(inv => inv.status !== 'Paid').reduce((acc, inv) => acc + (Number(inv.amount) - (Number(inv.paid) || 0)), 0) || 0;
+      const netProfit = totalRevenue - totalExpenses;
 
       setStats([
         { title: t('total_clients'), value: clientCount?.toString() || '0', icon: Users, color: '#6366f1' },
         { title: t('total_bookings'), value: bookingsData?.length?.toString() || '0', icon: CalendarClock, color: '#10b981' },
         { title: t('pending_invoices'), value: `$${pendingInvoicesAmount.toLocaleString()}`, icon: Wallet, color: '#f59e0b' },
         { title: t('total_revenue'), value: `$${totalRevenue.toLocaleString()}`, icon: TrendingUp, color: '#ec4899' },
+        { title: t('total_expenses'), value: `$${totalExpenses.toLocaleString()}`, icon: Wallet, color: '#ef4444' },
+        { title: t('net_profit'), value: `$${netProfit.toLocaleString()}`, icon: TrendingUp, color: '#8b5cf6' },
       ]);
 
       setUpcomingEvents(bookingsData?.slice(0, 3).map(b => ({
@@ -75,7 +80,7 @@ const Dashboard = () => {
     return (
       <div className="dashboard-page">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-          {[1,2,3,4].map(i => <Skeleton key={i} height="120px" />)}
+          {[1,2,3,4,5,6].map(i => <Skeleton key={i} height="120px" />)}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }}>
           <Skeleton height="400px" />

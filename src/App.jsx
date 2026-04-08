@@ -7,6 +7,7 @@ import Clients from './pages/Clients';
 import Packages from './pages/Packages';
 import Bookings from './pages/Bookings';
 import Invoices from './pages/Invoices';
+import Expenses from './pages/Expenses';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
@@ -109,6 +110,7 @@ const AppContent = ({ isCollapsed, setIsCollapsed, handleLogout }) => {
             <Route path="/packages" element={<Packages />} />
             <Route path="/bookings" element={<Bookings />} />
             <Route path="/invoices" element={<Invoices />} />
+            <Route path="/expenses" element={<Expenses />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<div style={{ padding: '2rem' }}>404 - Not Found</div>} />
