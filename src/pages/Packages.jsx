@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Package, Plus, Edit2, Trash2, Layers, Loader2, X } from 'lucide-react';
+import { Package, Plus, Edit2, Trash2, Loader2, X, Image, Printer, Calendar } from 'lucide-react';
 import { supabase } from '../utils/supabase/client';
 import Toast from '../components/common/Toast';
 import ConfirmModal from '../components/common/ConfirmModal';
@@ -16,7 +16,8 @@ const Packages = () => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
-  const [form, setForm] = useState({ name: '', description: '', price: '', duration: 60 });
+  const emptyForm = { name: '', description: '', price: '', sessions: 1, albums: 0, prints: 0 };
+  const [form, setForm] = useState(emptyForm);
 
   // Animation variants
   const pageVariants = {
@@ -39,27 +40,50 @@ const Packages = () => {
   const handleOpenModal = (pkg = null) => {
     if (pkg) {
       setEditingPkg(pkg);
-      setForm({ name: pkg.name, description: pkg.description || '', price: pkg.price, duration: pkg.duration });
+      setForm({
+        name: pkg.name || '',
+        description: pkg.description || '',
+        price: pkg.price || '',
+        sessions: pkg.sessions ?? 1,
+        albums: pkg.albums ?? 0,
+        prints: pkg.prints ?? 0,
+      });
     } else {
       setEditingPkg(null);
-      setForm({ name: '', description: '', price: '', duration: 60 });
+      setForm(emptyForm);
     }
     setIsModalOpen(true);
   };
 
   const handleSave = async () => {
     if (!form.name || !form.price) return;
+    const payload = {
+      name: form.name,
+      price: Number(form.price),
+      sessions: Number(form.sessions),
+      albums: Number(form.albums),
+      prints: Number(form.prints),
+      // description only if the column exists — send it and let Supabase ignore it if missing
+      ...(form.description ? { description: form.description } : {}),
+    };
+
     if (editingPkg) {
-      const { data, error } = await supabase.from('packages').update(form).eq('id', editingPkg.id).select();
+      const { data, error } = await supabase.from('packages').update(payload).eq('id', editingPkg.id).select();
       if (!error) {
         setPackages(packages.map(p => p.id === editingPkg.id ? data[0] : p));
         setToast({ message: t('package_updated'), type: 'success' });
+      } else {
+        console.error(error);
+        setToast({ message: error.message, type: 'error' });
       }
     } else {
-      const { data, error } = await supabase.from('packages').insert([form]).select();
+      const { data, error } = await supabase.from('packages').insert([payload]).select();
       if (!error) {
         setPackages([...packages, data[0]]);
         setToast({ message: t('package_created'), type: 'success' });
+      } else {
+        console.error(error);
+        setToast({ message: error.message, type: 'error' });
       }
     }
     setIsModalOpen(false);
@@ -83,10 +107,10 @@ const Packages = () => {
   }
 
   return (
-    <motion.div 
+    <motion.div
       variants={pageVariants}
-      initial="initial" 
-      animate="animate" 
+      initial="initial"
+      animate="animate"
       exit="exit"
       transition={{ duration: 0.4 }}
       className="packages-page"
@@ -99,48 +123,122 @@ const Packages = () => {
           <h1 className="h1">{t('packages_title')}</h1>
           <p className="text-mute">{t('packages_subtitle')}</p>
         </div>
-        <button onClick={() => handleOpenModal()} className="btn btn-primary"><Plus size={20} /><span>{t('add_package')}</span></button>
+        <button id="add-package-btn" onClick={() => handleOpenModal()} className="btn btn-primary">
+          <Plus size={20} />
+          <span>{t('add_package')}</span>
+        </button>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-        {packages.map((pkg) => (
-          <div key={pkg.id} className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                <div style={{ background: 'var(--bg-surface)', padding: '0.75rem', borderRadius: '10px', color: 'var(--accent)' }}><Package size={24} /></div>
-                <div style={{ textAlign: lang === 'ar' ? 'left' : 'right' }}><p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('price')}</p><p style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--accent)' }}>{t('currency')} {pkg.price}</p></div>
+      {packages.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '4rem 2rem', color: 'var(--text-secondary)' }}>
+          <Package size={48} style={{ margin: '0 auto 1rem', opacity: 0.3 }} />
+          <p style={{ fontSize: '1rem' }}>No packages yet. Click <strong>Add Package</strong> to create one.</p>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+          {packages.map((pkg) => (
+            <div key={pkg.id} className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                  <div style={{ background: 'var(--bg-surface)', padding: '0.75rem', borderRadius: '10px', color: 'var(--accent)' }}>
+                    <Package size={24} />
+                  </div>
+                  <div style={{ textAlign: lang === 'ar' ? 'left' : 'right' }}>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('price')}</p>
+                    <p style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--accent)' }}>{t('currency')} {pkg.price?.toLocaleString()}</p>
+                  </div>
+                </div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem' }}>{pkg.name}</h3>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+                  {pkg.description || 'No description provided.'}
+                </p>
+
+                <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <Calendar size={14} color="var(--text-secondary)" />
+                    <div>
+                      <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{t('sessions') || 'Sessions'}</p>
+                      <p style={{ fontWeight: 600, fontSize: '0.875rem' }}>{pkg.sessions ?? '—'}</p>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <Image size={14} color="var(--text-secondary)" />
+                    <div>
+                      <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{t('albums') || 'Albums'}</p>
+                      <p style={{ fontWeight: 600, fontSize: '0.875rem' }}>{pkg.albums ?? '—'}</p>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <Printer size={14} color="var(--text-secondary)" />
+                    <div>
+                      <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{t('prints') || 'Prints'}</p>
+                      <p style={{ fontWeight: 600, fontSize: '0.875rem' }}>{pkg.prints ?? '—'}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem' }}>{pkg.name}</h3>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>{pkg.description || 'No description provided.'}</p>
-              <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem' }}>
-                <div><p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('duration')}</p><p style={{ fontWeight: 600 }}>{pkg.duration} m</p></div>
+
+              <div style={{ display: 'flex', gap: '0.5rem', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
+                <button onClick={() => handleOpenModal(pkg)} className="btn btn-ghost" style={{ flex: 1, fontSize: '0.875rem' }}>
+                  <Edit2 size={16} /><span>{t('edit')}</span>
+                </button>
+                <button onClick={() => { setDeletingId(pkg.id); setIsConfirmOpen(true); }} className="btn btn-ghost" style={{ flex: 1, fontSize: '0.875rem', color: 'var(--danger)' }}>
+                  <Trash2 size={16} /><span>{t('delete')}</span>
+                </button>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: '0.5rem', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
-              <button onClick={() => handleOpenModal(pkg)} className="btn btn-ghost" style={{ flex: 1, fontSize: '0.875rem' }}><Edit2 size={16} /><span>{t('edit')}</span></button>
-              <button onClick={() => { setDeletingId(pkg.id); setIsConfirmOpen(true); }} className="btn btn-ghost" style={{ flex: 1, fontSize: '0.875rem', color: 'var(--danger)' }}><Trash2 size={16} /><span>{t('delete')}</span></button>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       <AnimatePresence>
         {isModalOpen && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="card" style={{ width: '90%', maxWidth: '500px', padding: '2rem', margin: '1rem' }}>
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="card"
+              style={{ width: '90%', maxWidth: '520px', padding: '2rem', margin: '1rem' }}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>{editingPkg ? t('edit_package') : t('new_package')}</h2>
-                <button onClick={() => setIsModalOpen(false)} className="btn btn-ghost"><X size={20} /></button>
+                <button onClick={() => setIsModalOpen(false)} className="btn btn-ghost" style={{ padding: '0.5rem' }}><X size={20} /></button>
               </div>
-              <div className="input-group"><label className="input-label">{t('package_name')}</label><input type="text" className="input-field" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-              <div className="input-group"><label className="input-label">{t('description')}</label><textarea className="input-field" style={{ minHeight: '80px' }} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div className="input-group"><label className="input-label">{t('price')} ({t('currency')})</label><input type="number" className="input-field" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} /></div>
-                <div className="input-group"><label className="input-label">{t('duration')}</label><input type="number" className="input-field" value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })} /></div>
+
+              <div className="input-group">
+                <label className="input-label">{t('package_name')}</label>
+                <input type="text" className="input-field" placeholder="e.g. Wedding Full Package" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
               </div>
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+
+              <div className="input-group">
+                <label className="input-label">{t('description')}</label>
+                <textarea className="input-field" style={{ minHeight: '70px', resize: 'vertical' }} placeholder="Brief description of this package..." value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+              </div>
+
+              <div className="input-group">
+                <label className="input-label">{t('price')} ({t('currency')})</label>
+                <input type="number" className="input-field" placeholder="0" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+                <div className="input-group">
+                  <label className="input-label">{t('sessions') || 'Sessions'}</label>
+                  <input type="number" min="0" className="input-field" value={form.sessions} onChange={(e) => setForm({ ...form, sessions: e.target.value })} />
+                </div>
+                <div className="input-group">
+                  <label className="input-label">{t('albums') || 'Albums'}</label>
+                  <input type="number" min="0" className="input-field" value={form.albums} onChange={(e) => setForm({ ...form, albums: e.target.value })} />
+                </div>
+                <div className="input-group">
+                  <label className="input-label">{t('prints') || 'Prints'}</label>
+                  <input type="number" min="0" className="input-field" value={form.prints} onChange={(e) => setForm({ ...form, prints: e.target.value })} />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
                 <button onClick={() => setIsModalOpen(false)} className="btn btn-ghost" style={{ flex: 1 }}>{t('cancel')}</button>
-                <button onClick={handleSave} className="btn btn-primary" style={{ flex: 1 }}>{t('save_changes')}</button>
+                <button onClick={handleSave} className="btn btn-primary" style={{ flex: 1 }}>{editingPkg ? t('save_changes') : t('add_package')}</button>
               </div>
             </motion.div>
           </div>

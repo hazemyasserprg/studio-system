@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, DollarSign, CheckCircle, Clock, X, Trash2, FileDown, Loader2 } from 'lucide-react';
+import { Plus, DollarSign, CheckCircle, Clock, X, Trash2, FileDown, Loader2, FileText } from 'lucide-react';
 import { supabase } from '../utils/supabase/client';
 import Toast from '../components/common/Toast';
 import ConfirmModal from '../components/common/ConfirmModal';
 import Skeleton from '../components/common/Skeleton';
+import EmptyState from '../components/common/EmptyState';
 import { generateInvoicePDF } from '../utils/pdfGenerator';
 import CustomSelect from '../components/common/CustomSelect';
 import CustomDatePicker from '../components/common/CustomDatePicker';
@@ -204,7 +205,7 @@ const Invoices = () => {
                                  };
                               
                               try {
-                                generateInvoicePDF(inv, inv.clients || { name: 'Unknown' }, studioInfo, t('currency'));
+                                generateInvoicePDF(inv, inv.clients || { name: 'Unknown' }, studioInfo, 'EGP');
                                 setToast({ message: t('download_started'), type: 'success' });
                               } catch (err) {
                                 console.error(err);
@@ -226,6 +227,14 @@ const Invoices = () => {
                 ))}
               </tbody>
             </table>
+          )}
+          {!isLoading && invoices.length === 0 && (
+            <EmptyState
+              icon={<FileText size={36} />}
+              title="No invoices yet"
+              subtitle="Create your first invoice by linking it to a booking."
+              action={{ label: t('create_invoice'), onClick: () => setIsModalOpen(true) }}
+            />
           )}
         </div>
       </div>

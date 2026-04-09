@@ -2,6 +2,7 @@ import { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import Sidebar from './components/common/Sidebar';
+import ResetPasswordModal from './components/common/ResetPasswordModal';
 import { supabase } from './utils/supabase/client';
 import './index.css';
 
@@ -17,21 +18,20 @@ const Settings = lazy(() => import('./pages/Settings'));
 const Login = lazy(() => import('./pages/Login'));
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [session, setSession] = useState(undefined);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [showReset, setShowReset] = useState(false);
 
   useEffect(() => {
     // Auto-collapse sidebar on smaller screens
     const handleResize = () => {
       if (window.innerWidth <= 1024) {
-        setIsCollapsed(true); // Hidden on mobile by default
+        setIsCollapsed(true);
       }
     };
-    
-    handleResize(); // Initial check
+    handleResize();
     window.addEventListener('resize', handleResize);
-    
+
     // Apply theme from localStorage
     const savedTheme = localStorage.getItem('dark_mode');
     if (savedTheme === 'true') {
@@ -39,7 +39,7 @@ function App() {
     } else {
       document.body.classList.remove('dark-theme');
     }
-    
+
     const savedColor = localStorage.getItem('studio_color');
     if (savedColor) {
       document.documentElement.style.setProperty('--accent', savedColor);
@@ -49,19 +49,18 @@ function App() {
   }, []);
 
   useEffect(() => {
-    // 1. Check current session
+    // 1. Get initial session (null if none)
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsAuthenticated(!!session);
-      setIsLoading(false);
+      setSession(session ?? null);
     });
 
-    // 2. Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-        setIsAuthenticated(true);
-      } else if (event === 'SIGNED_OUT') {
-        setIsAuthenticated(false);
+    // 2. Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setShowReset(true);
+        return;
       }
+      setSession(session ?? null);
     });
 
     return () => subscription.unsubscribe();
@@ -69,26 +68,69 @@ function App() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    // session will be set to null by the onAuthStateChange listener
   };
 
-  if (isLoading) {
+  // Loading state — show a centered spinner while we determine auth status
+  if (session === undefined) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: 'var(--accent)', fontSize: '2rem', fontWeight: 800 }}>S</div>
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--bg-primary)',
+        gap: '1rem'
+      }}>
+        <div style={{
+          width: '52px',
+          height: '52px',
+          background: 'var(--accent)',
+          color: 'white',
+          borderRadius: '14px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '1.75rem',
+          fontWeight: 800,
+          boxShadow: '0 10px 30px -5px rgba(99,102,241,0.4)'
+        }}>S</div>
+        <div style={{ width: '32px', height: '3px', background: 'var(--bg-surface)', borderRadius: '9999px', overflow: 'hidden' }}>
+          <div style={{
+            height: '100%',
+            background: 'var(--accent)',
+            animation: 'loading-bar 1.2s ease-in-out infinite',
+            borderRadius: '9999px'
+          }} />
+        </div>
+        <style>{`
+          @keyframes loading-bar {
+            0% { width: 0%; margin-left: 0%; }
+            50% { width: 100%; margin-left: 0%; }
+            100% { width: 0%; margin-left: 100%; }
+          }
+        `}</style>
       </div>
     );
   }
 
   return (
     <Router>
-      {!isAuthenticated ? (
-        <>
-          <Navigate to="/" replace />
-          <Login onLogin={() => setIsAuthenticated(true)} />
-        </>
-      ) : (
-        <AppContent isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} handleLogout={handleLogout} />
-      )}
+      {showReset && <ResetPasswordModal onDone={() => setShowReset(false)} />}
+      <Suspense fallback={null}>
+        {session === null ? (
+          <Routes>
+            <Route path="*" element={<Login onLogin={() => {}} />} />
+          </Routes>
+        ) : (
+          <AppContent
+            isCollapsed={isCollapsed}
+            setIsCollapsed={setIsCollapsed}
+            handleLogout={handleLogout}
+          />
+        )}
+      </Suspense>
     </Router>
   );
 }
@@ -98,14 +140,14 @@ const AppContent = ({ isCollapsed, setIsCollapsed, handleLogout }) => {
 
   return (
     <div className="app-container">
-      <Sidebar 
-        onLogout={handleLogout} 
-        isCollapsed={isCollapsed} 
-        setIsCollapsed={setIsCollapsed} 
+      <Sidebar
+        onLogout={handleLogout}
+        isCollapsed={isCollapsed}
+        setIsCollapsed={setIsCollapsed}
       />
       <main className={`main-content ${isCollapsed ? 'collapsed' : ''}`}>
         <AnimatePresence mode="wait">
-          <Suspense fallback={<div style={{ padding: '2rem', color: 'var(--accent)' }}>Loading page...</div>}>
+          <Suspense fallback={<div style={{ padding: '2rem', color: 'var(--accent)' }}>Loading...</div>}>
             <Routes location={location} key={location.pathname}>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<Dashboard />} />
@@ -116,7 +158,7 @@ const AppContent = ({ isCollapsed, setIsCollapsed, handleLogout }) => {
               <Route path="/expenses" element={<Expenses />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/settings" element={<Settings />} />
-              <Route path="*" element={<div style={{ padding: '2rem' }}>404 - Not Found</div>} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
           </Suspense>
         </AnimatePresence>

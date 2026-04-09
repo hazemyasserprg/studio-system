@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { FileText, FileSpreadsheet, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { supabase } from '../utils/supabase/client';
-import html2pdf from 'html2pdf.js';
 import Toast from '../components/common/Toast';
 import { useTranslation } from '../context/LanguageContext';
 
@@ -17,7 +16,6 @@ const Reports = () => {
   const [stats, setStats] = useState({ revenue: 0, outstanding: 0, sessions: 0, expenses: 0, profit: 0 });
   const [toastMessage, setToastMessage] = useState('');
 
-  // Animation variants
   const pageVariants = {
     initial: { opacity: 0, x: lang === 'ar' ? 20 : -20 },
     animate: { opacity: 1, x: 0 },
@@ -75,7 +73,6 @@ const Reports = () => {
       [t('package_type'), t('revenue_stats'), t('count')],
       ...data.map(row => [row.name, row.value, row.count])
     ];
-
     const csvContent = csvRows.map(e => e.join(",")).join("\n");
     const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -90,171 +87,101 @@ const Reports = () => {
     setTimeout(() => setToastMessage(''), 3000);
   };
 
-  const handleGeneratePDF = () => {
+  const handleGeneratePDF = async () => {
     setIsLoading(true);
     setToastMessage(t('pdf_generating'));
-    
+
     try {
-      const isAr = lang === 'ar';
+      const { default: jsPDF } = await import('jspdf');
       const studioInfo = {
         name: localStorage.getItem('studio_name') || 'StudioBiz',
         email: localStorage.getItem('studio_email') || 'contact@studiobiz.com',
-        logo: localStorage.getItem('studio_logo') || null,
         color: localStorage.getItem('studio_color') || '#6366f1',
       };
-      const primaryColor = studioInfo.color;
-      const currencySymbol = t('currency');
-      const dateStr = new Date().toLocaleDateString(isAr ? 'ar-EG' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-
-      const containerStyles = `
-        width: 800px;
-        height: 1120px;
-        background: white;
-        font-family: 'Inter', 'Arial', sans-serif;
-        color: #111827;
-        direction: ${isAr ? 'rtl' : 'ltr'};
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-      `;
-
-      const summaryRows = `
-        <tr style="border-bottom: 1px solid #f3f4f6;">
-          <td style="padding: 15px; border-bottom: 1px solid #f3f4f6; color: #111827;">${t('total_revenue') || 'Total Revenue'}</td>
-          <td style="padding: 15px; border-bottom: 1px solid #f3f4f6; font-weight: 600; color: #111827;">${currencySymbol} ${stats.revenue.toLocaleString()}</td>
-        </tr>
-        <tr style="border-bottom: 1px solid #f3f4f6;">
-          <td style="padding: 15px; border-bottom: 1px solid #f3f4f6; color: #111827;">${t('total_expenses') || 'Total Expenses'}</td>
-          <td style="padding: 15px; border-bottom: 1px solid #f3f4f6; font-weight: 600; color: #ef4444;">${currencySymbol} ${stats.expenses.toLocaleString()}</td>
-        </tr>
-        <tr style="border-bottom: 1px solid #f3f4f6;">
-          <td style="padding: 15px; border-bottom: 1px solid #f3f4f6; color: #111827;">${t('net_profit') || 'Net Profit'}</td>
-          <td style="padding: 15px; border-bottom: 1px solid #f3f4f6; font-weight: 700; color: ${stats.profit >= 0 ? '#10b981' : '#ef4444'};">${currencySymbol} ${stats.profit.toLocaleString()}</td>
-        </tr>
-        <tr style="border-bottom: 1px solid #f3f4f6;">
-          <td style="padding: 15px; border-bottom: 1px solid #f3f4f6; color: #111827;">${t('outstanding_dues') || 'Outstanding Dues'}</td>
-          <td style="padding: 15px; border-bottom: 1px solid #f3f4f6; font-weight: 600; color: #f59e0b;">${currencySymbol} ${stats.outstanding.toLocaleString()}</td>
-        </tr>
-        <tr>
-          <td style="padding: 15px; color: #111827;">${t('total_sessions') || 'Total Sessions'}</td>
-          <td style="padding: 15px; font-weight: 600; color: #111827;">${stats.sessions}</td>
-        </tr>
-      `;
-
-      const revenueRows = data.map(item => `
-        <tr style="border-bottom: 1px solid #f3f4f6;">
-          <td style="padding: 15px; color: #111827; text-align: ${isAr ? 'right' : 'left'};">${item.name}</td>
-          <td style="padding: 15px; font-weight: 600; color: #111827; text-align: ${isAr ? 'left' : 'right'};">${currencySymbol} ${item.value.toLocaleString()}</td>
-          <td style="padding: 15px; text-align: center; color: #111827;">${item.count}</td>
-        </tr>
-      `).join('');
-
-      const expenseRows = expenseData.map(item => `
-        <tr style="border-bottom: 1px solid #f3f4f6;">
-          <td style="padding: 15px; color: #111827; text-align: ${isAr ? 'right' : 'left'};">${item.name}</td>
-          <td style="padding: 15px; font-weight: 600; color: #ef4444; text-align: ${isAr ? 'left' : 'right'};">${currencySymbol} ${item.value.toLocaleString()}</td>
-        </tr>
-      `).join('');
-
-      const htmlContent = `
-        <div style="${containerStyles}">
-          <div style="background: ${primaryColor}; padding: 50px; color: white; display: flex; justify-content: space-between; align-items: flex-start;">
-            <div style="display: flex; gap: 20px; align-items: center;">
-              ${studioInfo.logo ? `<img src="${studioInfo.logo}" style="width: 90px; height: 90px; object-fit: contain; background: white; border-radius: 12px; padding: 5px;" />` : `<div style="width: 70px; height: 70px; background: rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 800;">S</div>`}
-              <div>
-                <h1 style="margin: 0; font-size: 32px; font-weight: 800; ${isAr ? '' : 'letter-spacing: -0.025em;'}">${studioInfo.name || 'StudioBiz'}</h1>
-                <p style="margin: 5px 0 0 0; opacity: 0.8; font-size: 14px;">${t('financial_reports') || 'Financial Reports'}</p>
-              </div>
-            </div>
-            <div style="text-align: ${isAr ? 'left' : 'right'}">
-              <h2 style="margin: 0; font-size: 36px; font-weight: 800; ${isAr ? '' : 'text-transform: uppercase;'}">${isAr ? 'تقرير' : 'REPORT'}</h2>
-              <p style="margin: 5px 0 0 0; opacity: 0.9;">${dateStr}</p>
-            </div>
-          </div>
-
-          <div style="padding: 40px 50px;">
-            <h3 style="margin: 0 0 20px 0; font-size: 18px; color: ${primaryColor}; ${isAr ? '' : 'text-transform: uppercase;'}">${t('financial_summary') || 'Financial Summary'}</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 14px; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
-              <tbody style="background: white;">
-                ${summaryRows}
-              </tbody>
-            </table>
-          </div>
-
-          <div style="padding: 0 50px 40px 50px; display: grid; grid-template-columns: 1fr; gap: 40px;">
-            <div>
-              <h3 style="margin: 0 0 20px 0; font-size: 18px; color: #111827; ${isAr ? '' : 'text-transform: uppercase;'}">${t('revenue_by_category') || 'Revenue By Category'}</h3>
-              <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                <thead>
-                  <tr style="background: #f3f4f6;">
-                    <th style="padding: 12px 15px; font-weight: 600; color: #111827; text-align: ${isAr ? 'right' : 'left'};">${t('package_type') || (isAr ? 'نوع الباقة' : 'Package')}</th>
-                    <th style="padding: 12px 15px; font-weight: 600; color: #111827; text-align: ${isAr ? 'left' : 'right'};">${t('revenue_stats') || (isAr ? 'إحصائيات الإيرادات' : 'Revenue')}</th>
-                    <th style="padding: 12px 15px; font-weight: 600; text-align: center; color: #111827;">${t('count') || (isAr ? 'العدد' : 'Count')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${revenueRows}
-                </tbody>
-              </table>
-            </div>
-
-            ${expenseData.length > 0 ? `
-            <div>
-              <h3 style="margin: 0 0 20px 0; font-size: 18px; color: #111827; ${isAr ? '' : 'text-transform: uppercase;'}">${isAr ? 'المصروفات حسب الفئة' : 'Expenses By Category'}</h3>
-              <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                <thead>
-                  <tr style="background: #f3f4f6;">
-                    <th style="padding: 12px 15px; font-weight: 600; color: #111827; text-align: ${isAr ? 'right' : 'left'};">${isAr ? 'الفئة' : 'Category'}</th>
-                    <th style="padding: 12px 15px; font-weight: 600; color: #111827; text-align: ${isAr ? 'left' : 'right'};">${t('amount') || (isAr ? 'المبلغ' : 'Amount')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${expenseRows}
-                </tbody>
-              </table>
-            </div>` : ''}
-          </div>
-
-          <div style="margin-top: auto; background: #f9fafb; padding: 40px 50px; text-align: center; border-top: 1px solid #e5e7eb;">
-            <p style="margin: 0; font-weight: 600; font-size: 15px; color: #4b5563;">${isAr ? 'تقرير مالي رسمي' : 'Official Financial Report'}</p>
-            <p style="margin: 5px 0 0 0; font-size: 13px; color: #9ca3af;">Generated securely by ${studioInfo.name || 'StudioBiz'}</p>
-          </div>
-        </div>
-      `;
-
-      const opt = {
-        margin: 0,
-        filename: `Studio_Report_${new Date().toLocaleDateString()}.pdf`,
-        image: { type: 'png' },
-        html2canvas: { scale: 4, useCORS: true, windowWidth: 800 },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      const hexToRgb = (hex) => {
+        const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return r ? { r: parseInt(r[1], 16), g: parseInt(r[2], 16), b: parseInt(r[3], 16) } : { r: 99, g: 102, b: 241 };
       };
+      const rgb = hexToRgb(studioInfo.color);
+      const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+      const pageW = 210;
+      const currency = 'EGP';
+      const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-      html2pdf().from(htmlContent).set(opt).save().then(() => {
-        setIsLoading(false);
-        setToastMessage(t('pdf_export_success'));
-      }).catch(err => {
-        console.error(err);
-        setIsLoading(false);
-        setToastMessage(t('pdf_export_error'));
+      // Header band
+      doc.setFillColor(rgb.r, rgb.g, rgb.b);
+      doc.rect(0, 0, pageW, 45, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(22); doc.setTextColor(255, 255, 255);
+      doc.text(studioInfo.name, 15, 20);
+      doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+      doc.setTextColor(220, 220, 255);
+      doc.text('FINANCIAL REPORT', 15, 30);
+      doc.text(dateStr, pageW - 15, 30, { align: 'right' });
+
+      // Summary section
+      let y = 58;
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(rgb.r, rgb.g, rgb.b);
+      doc.text('FINANCIAL SUMMARY', 15, y); y += 8;
+
+      const summaryRows = [
+        ['Total Revenue Collected', `${currency} ${stats.revenue.toLocaleString()}`, [16, 185, 129]],
+        ['Total Expenses',          `${currency} ${stats.expenses.toLocaleString()}`, [239, 68, 68]],
+        ['Net Profit',              `${currency} ${stats.profit.toLocaleString()}`,   stats.profit >= 0 ? [16, 185, 129] : [239, 68, 68]],
+        ['Outstanding Dues',        `${currency} ${stats.outstanding.toLocaleString()}`, [245, 158, 11]],
+        ['Total Sessions',          String(stats.sessions),                            [99, 102, 241]],
+      ];
+
+      summaryRows.forEach(([label, value, color]) => {
+        doc.setFillColor(248, 249, 250); doc.rect(15, y - 5, pageW - 30, 10, 'F');
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(80, 80, 80);
+        doc.text(label, 20, y + 1);
+        doc.setFont('helvetica', 'bold'); doc.setTextColor(...color);
+        doc.text(value, pageW - 20, y + 1, { align: 'right' });
+        y += 12;
       });
+
+      // Revenue by package
+      if (data.length > 0) {
+        y += 6;
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(rgb.r, rgb.g, rgb.b);
+        doc.text('REVENUE BY PACKAGE', 15, y); y += 8;
+
+        data.forEach((item) => {
+          doc.setFillColor(248, 249, 250); doc.rect(15, y - 5, pageW - 30, 10, 'F');
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(80, 80, 80);
+          doc.text(item.name, 20, y + 1);
+          doc.setFont('helvetica', 'bold'); doc.setTextColor(rgb.r, rgb.g, rgb.b);
+          doc.text(`${currency} ${item.value.toLocaleString()} (${item.count})`, pageW - 20, y + 1, { align: 'right' });
+          y += 12;
+          if (y > 270) { doc.addPage(); y = 20; }
+        });
+      }
+
+      // Footer
+      doc.setFillColor(248, 249, 250); doc.rect(0, 287, pageW, 10, 'F');
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(156, 163, 175);
+      doc.text(`${studioInfo.name} • ${studioInfo.email} • ${dateStr}`, pageW / 2, 293, { align: 'center' });
+
+      doc.save(`Studio_Report_${new Date().toLocaleDateString()}.pdf`);
+      setToastMessage(t('pdf_export_success'));
     } catch (err) {
       console.error(err);
-      setIsLoading(false);
       setToastMessage(t('pdf_export_error'));
     }
-    
+
+    setIsLoading(false);
     setTimeout(() => setToastMessage(''), 3000);
   };
 
   if (isLoading) return <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Loader2 className="animate-spin" size={32} color="var(--accent)" /></div>;
 
   return (
-    <motion.div 
+    <motion.div
       variants={pageVariants}
-      initial="initial" 
-      animate="animate" 
-      exit="exit" 
+      initial="initial"
+      animate="animate"
+      exit="exit"
       transition={{ duration: 0.4 }}
       className="reports-page"
     >
@@ -280,19 +207,22 @@ const Reports = () => {
       <div className="grid-responsive" style={{ marginBottom: '2rem', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
         <div className="card">
           <p className="text-mute" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>{t('total_revenue_paid')}</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}><h2 style={{ fontSize: '1.75rem', fontWeight: 700 }}>{t('currency')} {stats.revenue.toLocaleString()}</h2><div className="badge badge-success" style={{ fontSize: '0.65rem' }}>{t('realtime_badge')}</div></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            <h2 style={{ fontSize: '1.75rem', fontWeight: 700 }}>{t('currency')} {stats.revenue.toLocaleString()}</h2>
+            <div className="badge badge-success" style={{ fontSize: '0.65rem' }}>{t('realtime_badge')}</div>
+          </div>
         </div>
         <div className="card">
           <p className="text-mute" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>{t('total_expenses')}</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}><h2 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--danger)' }}>{t('currency')} {stats.expenses.toLocaleString()}</h2></div>
+          <h2 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--danger)' }}>{t('currency')} {stats.expenses.toLocaleString()}</h2>
         </div>
         <div className="card" style={{ border: '2px solid var(--accent)' }}>
           <p className="text-mute" style={{ fontSize: '0.875rem', marginBottom: '0.5rem', fontWeight: 700 }}>{t('net_profit')}</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}><h2 style={{ fontSize: '2rem', fontWeight: 800, color: stats.profit >= 0 ? 'var(--success)' : 'var(--danger)' }}>{t('currency')} {stats.profit.toLocaleString()}</h2></div>
+          <h2 style={{ fontSize: '2rem', fontWeight: 800, color: stats.profit >= 0 ? 'var(--success)' : 'var(--danger)' }}>{t('currency')} {stats.profit.toLocaleString()}</h2>
         </div>
         <div className="card">
           <p className="text-mute" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>{t('outstanding_dues')}</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}><h2 style={{ fontSize: '1.75rem', fontWeight: 700 }}>{t('currency')} {stats.outstanding.toLocaleString()}</h2></div>
+          <h2 style={{ fontSize: '1.75rem', fontWeight: 700 }}>{t('currency')} {stats.outstanding.toLocaleString()}</h2>
         </div>
       </div>
 
@@ -303,29 +233,9 @@ const Reports = () => {
             <ResponsiveContainer width="99%" height="100%">
               <BarChart data={data}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                <XAxis 
-                  dataKey="name" 
-                  stroke="var(--text-secondary)" 
-                  fontSize={12} 
-                  tickLine={false} 
-                  axisLine={false} 
-                  reversed={lang === 'ar'} 
-                />
-                <YAxis 
-                  stroke="var(--text-secondary)" 
-                  fontSize={12} 
-                  tickLine={false} 
-                  axisLine={false} 
-                  orientation={lang === 'ar' ? 'right' : 'left'} 
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'var(--bg-secondary)', 
-                    borderColor: 'var(--border)', 
-                    color: 'var(--text-primary)', 
-                    textAlign: lang === 'ar' ? 'right' : 'left' 
-                  }} 
-                />
+                <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip contentStyle={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
                 <Bar dataKey="value" fill="var(--accent)" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -338,29 +248,9 @@ const Reports = () => {
             <ResponsiveContainer width="99%" height="100%">
               <BarChart data={expenseData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                <XAxis 
-                  dataKey="name" 
-                  stroke="var(--text-secondary)" 
-                  fontSize={12} 
-                  tickLine={false} 
-                  axisLine={false} 
-                  reversed={lang === 'ar'} 
-                />
-                <YAxis 
-                  stroke="var(--text-secondary)" 
-                  fontSize={12} 
-                  tickLine={false} 
-                  axisLine={false} 
-                  orientation={lang === 'ar' ? 'right' : 'left'} 
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'var(--bg-secondary)', 
-                    borderColor: 'var(--border)', 
-                    color: 'var(--text-primary)', 
-                    textAlign: lang === 'ar' ? 'right' : 'left' 
-                  }} 
-                />
+                <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip contentStyle={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
                 <Bar dataKey="value" fill="var(--danger)" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -382,7 +272,7 @@ const Reports = () => {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', width: '100%', marginTop: 'auto' }}>
             {data.map((entry, index) => (
               <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
-                <div style={{ width: '10px', height: '10px', borderRadius: '2px', backgroundColor: COLORS[index % COLORS.length] }}></div>
+                <div style={{ width: '10px', height: '10px', borderRadius: '2px', backgroundColor: COLORS[index % COLORS.length] }} />
                 <span style={{ color: 'var(--text-secondary)' }}>{entry.name}</span>
               </div>
             ))}
