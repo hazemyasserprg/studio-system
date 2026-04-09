@@ -29,10 +29,23 @@ export const generateInvoicePDF = (invoice, client, studioInfo = {}, currencySym
   doc.setFillColor(rgb.r, rgb.g, rgb.b);
   doc.rect(0, 0, pageW, 50, 'F');
 
+  // Logo
+  if (studioInfo.logo) {
+    try {
+      doc.addImage(studioInfo.logo, 'PNG', 12, 8, 34, 34);
+    } catch (_) { /* skip if image fails */ }
+  } else {
+    doc.setFillColor(255, 255, 255, 0.2);
+    doc.roundedRect(12, 8, 34, 34, 6, 6, 'F');
+    doc.setFontSize(20); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
+    doc.text('S', 29, 30, { align: 'center' });
+  }
+
+  // Studio name (offset right to leave room for logo)
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(22);
+  doc.setFontSize(18);
   doc.setTextColor(255, 255, 255);
-  doc.text(studioInfo.name || 'StudioBiz', 15, 22);
+  doc.text(studioInfo.name || 'StudioBiz', 52, 22);
 
   doc.setFontSize(30);
   doc.text('INVOICE', pageW - 15, 22, { align: 'right' });
@@ -40,11 +53,11 @@ export const generateInvoicePDF = (invoice, client, studioInfo = {}, currencySym
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(220, 220, 255);
-  doc.text(`#${String(invoice?.id || '0000').toUpperCase()}`, 15, 32);
+  doc.text(`#${String(invoice?.id || '0000').toUpperCase()}`, 52, 32);
   doc.text(dateStr, pageW - 15, 32, { align: 'right' });
 
   if (studioInfo.email) {
-    doc.text(studioInfo.email, 15, 40);
+    doc.text(studioInfo.email, 52, 40);
   }
 
   // ── Bill To section ──────────────────────────────────────
