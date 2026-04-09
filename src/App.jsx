@@ -49,16 +49,20 @@ function App() {
   }, []);
 
   useEffect(() => {
-    // 1. Get initial session (null if none)
+    // 1. Check for PASSWORD_RECOVERY in URL fragment (fallback for initial load)
+    if (window.location.hash.includes('type=recovery')) {
+      setShowReset(true);
+    }
+
+    // 2. Get initial session (null if none)
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session ?? null);
     });
 
-    // 2. Listen for auth state changes
+    // 3. Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
         setShowReset(true);
-        return;
       }
       setSession(session ?? null);
     });
@@ -117,7 +121,13 @@ function App() {
 
   return (
     <Router>
-      {showReset && <ResetPasswordModal onDone={() => setShowReset(false)} />}
+      {showReset && <ResetPasswordModal onDone={() => {
+        setShowReset(false);
+        // Clear the recovery fragment from the URL
+        if (window.location.hash.includes('type=recovery')) {
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+      }} />}
       <Suspense fallback={null}>
         {session === null ? (
           <Routes>
