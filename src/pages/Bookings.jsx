@@ -183,7 +183,7 @@ const Bookings = () => {
                     </td>
                     <td style={{ textAlign: 'inherit' }}><div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'inherit' }}><PkgIcon size={14} className="text-secondary" /><span>{b.packages?.name}</span></div></td>
                     <td style={{ textAlign: 'inherit' }}><div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'inherit' }}><Clock size={14} className="text-secondary" /><span>{new Date(b.event_date).toLocaleDateString()}</span></div></td>
-                    <td style={{ fontWeight: 600, textAlign: 'inherit' }}>${b.total_price}</td>
+                    <td style={{ fontWeight: 600, textAlign: 'inherit' }}>{t('currency')} {b.total_price}</td>
                     <td style={{ textAlign: 'inherit' }}><span className={`badge ${b.status === 'Confirmed' ? 'badge-success' : 'badge-warning'}`}>{t(b.status.toLowerCase())}</span></td>
                     <td>
                       <div style={{ display: 'flex', gap: '0.5rem', justifyContent: lang === 'ar' ? 'flex-start' : 'flex-end' }}>
@@ -305,7 +305,7 @@ const Bookings = () => {
                 <button onClick={() => setIsModalOpen(false)} className="btn btn-ghost"><X size={20} /></button>
               </div>
               <CustomSelect label={t('select_client')} value={form.client_id} onChange={(val) => setForm({ ...form, client_id: val })} options={clients.map(c => ({ label: c.name, value: c.id }))} placeholder={t('select_client_placeholder')} />
-              <CustomSelect label={t('select_package')} value={form.package_id} onChange={(val) => setForm({ ...form, package_id: val })} options={packages.map(p => ({ label: `${p.name} ($${p.price})`, value: p.id }))} placeholder={t('select_package_placeholder')} />
+              <CustomSelect label={t('select_package')} value={form.package_id} onChange={(val) => setForm({ ...form, package_id: val })} options={packages.map(p => ({ label: `${p.name} (${t('currency')} ${p.price})`, value: p.id }))} placeholder={t('select_package_placeholder')} />
               <CustomDatePicker label={t('event_date')} value={form.event_date} onChange={(val) => setForm({ ...form, event_date: val })} openUp={true} />
               <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
                 <button onClick={() => setIsModalOpen(false)} className="btn btn-ghost" style={{ flex: 1 }}>{t('cancel')}</button>

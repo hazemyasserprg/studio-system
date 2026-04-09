@@ -38,12 +38,12 @@ const Dashboard = () => {
       const netProfit = totalRevenue - totalExpenses;
 
       setStats([
-        { title: t('total_clients'), value: clientCount?.toString() || '0', icon: Users, color: '#6366f1' },
-        { title: t('total_bookings'), value: bookingsData?.length?.toString() || '0', icon: CalendarClock, color: '#10b981' },
-        { title: t('pending_invoices'), value: `$${pendingInvoicesAmount.toLocaleString()}`, icon: Wallet, color: '#f59e0b' },
-        { title: t('total_revenue'), value: `$${totalRevenue.toLocaleString()}`, icon: TrendingUp, color: '#ec4899' },
-        { title: t('total_expenses'), value: `$${totalExpenses.toLocaleString()}`, icon: Wallet, color: '#ef4444' },
-        { title: t('net_profit'), value: `$${netProfit.toLocaleString()}`, icon: TrendingUp, color: '#8b5cf6' },
+        { title: t('total_clients'), value: clientCount?.toString() || '0', icon: Users, color: '#6366f1', onClick: () => navigate('/clients') },
+        { title: t('total_bookings'), value: bookingsData?.length?.toString() || '0', icon: CalendarClock, color: '#10b981', onClick: () => navigate('/bookings') },
+        { title: t('pending_invoices'), value: `${t('currency')} ${pendingInvoicesAmount.toLocaleString()}`, icon: Wallet, color: '#f59e0b', onClick: () => navigate('/invoices') },
+        { title: t('total_revenue'), value: `${t('currency')} ${totalRevenue.toLocaleString()}`, icon: TrendingUp, color: '#ec4899', onClick: () => navigate('/reports') },
+        { title: t('total_expenses'), value: `${t('currency')} ${totalExpenses.toLocaleString()}`, icon: Wallet, color: '#ef4444', onClick: () => navigate('/expenses') },
+        { title: t('net_profit'), value: `${t('currency')} ${netProfit.toLocaleString()}`, icon: TrendingUp, color: '#8b5cf6', onClick: () => navigate('/reports') },
       ]);
 
       setUpcomingEvents(bookingsData?.slice(0, 3).map(b => ({
@@ -74,6 +74,19 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
+
+    // Realtime subscription for live updates
+    const channel = supabase
+      .channel('dashboard-auto-refresh')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => fetchDashboardData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'invoices' }, () => fetchDashboardData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, () => fetchDashboardData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, () => fetchDashboardData())
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [fetchDashboardData]);
 
   if (isLoading) {

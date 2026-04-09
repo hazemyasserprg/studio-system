@@ -3,8 +3,7 @@ import { motion } from 'framer-motion';
 import { FileText, FileSpreadsheet, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { supabase } from '../utils/supabase/client';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import html2pdf from 'html2pdf.js';
 import Toast from '../components/common/Toast';
 import { useTranslation } from '../context/LanguageContext';
 
@@ -78,7 +77,7 @@ const Reports = () => {
     ];
 
     const csvContent = csvRows.map(e => e.join(",")).join("\n");
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
@@ -92,49 +91,159 @@ const Reports = () => {
   };
 
   const handleGeneratePDF = () => {
+    setIsLoading(true);
+    setToastMessage(t('pdf_generating'));
+    
     try {
-      const doc = new jsPDF();
-      doc.setFontSize(20);
-      doc.text(t('reports_title'), 14, 22);
-      doc.setFontSize(11);
-      doc.setTextColor(100);
-      doc.text(`${lang === 'ar' ? 'تاريخ الإنشاء' : 'Generated on'}: ${new Date().toLocaleDateString()}`, 14, 30);
+      const isAr = lang === 'ar';
+      const studioInfo = {
+        name: localStorage.getItem('studio_name') || 'StudioBiz',
+        email: localStorage.getItem('studio_email') || 'contact@studiobiz.com',
+        logo: localStorage.getItem('studio_logo') || null,
+        color: localStorage.getItem('studio_color') || '#6366f1',
+      };
+      const primaryColor = studioInfo.color;
+      const currencySymbol = t('currency');
+      const dateStr = new Date().toLocaleDateString(isAr ? 'ar-EG' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-      // Financial Summary
-      doc.setTextColor(0);
-      doc.text(t('financial_summary').toUpperCase(), 14, 45);
+      const containerStyles = `
+        width: 800px;
+        height: 1120px;
+        background: white;
+        font-family: 'Inter', 'Arial', sans-serif;
+        color: #111827;
+        direction: ${isAr ? 'rtl' : 'ltr'};
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      `;
 
-      autoTable(doc, {
-        startY: 48,
-        head: [[t('metric'), t('value')]],
-        body: [
-          [t('total_revenue_paid'), `$${stats.revenue.toLocaleString()}`],
-          [t('total_expenses'), `$${stats.expenses.toLocaleString()}`],
-          [t('net_profit'), `$${stats.profit.toLocaleString()}`],
-          [t('outstanding_dues'), `$${stats.outstanding.toLocaleString()}`],
-          [t('total_sessions'), stats.sessions.toString()]
-        ],
-        theme: 'grid',
-        headStyles: { fillColor: [99, 102, 241] }
+      const summaryRows = `
+        <tr style="border-bottom: 1px solid #f3f4f6;">
+          <td style="padding: 15px; border-bottom: 1px solid #f3f4f6; color: #111827;">${t('total_revenue') || 'Total Revenue'}</td>
+          <td style="padding: 15px; border-bottom: 1px solid #f3f4f6; font-weight: 600; color: #111827;">${currencySymbol} ${stats.revenue.toLocaleString()}</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #f3f4f6;">
+          <td style="padding: 15px; border-bottom: 1px solid #f3f4f6; color: #111827;">${t('total_expenses') || 'Total Expenses'}</td>
+          <td style="padding: 15px; border-bottom: 1px solid #f3f4f6; font-weight: 600; color: #ef4444;">${currencySymbol} ${stats.expenses.toLocaleString()}</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #f3f4f6;">
+          <td style="padding: 15px; border-bottom: 1px solid #f3f4f6; color: #111827;">${t('net_profit') || 'Net Profit'}</td>
+          <td style="padding: 15px; border-bottom: 1px solid #f3f4f6; font-weight: 700; color: ${stats.profit >= 0 ? '#10b981' : '#ef4444'};">${currencySymbol} ${stats.profit.toLocaleString()}</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #f3f4f6;">
+          <td style="padding: 15px; border-bottom: 1px solid #f3f4f6; color: #111827;">${t('outstanding_dues') || 'Outstanding Dues'}</td>
+          <td style="padding: 15px; border-bottom: 1px solid #f3f4f6; font-weight: 600; color: #f59e0b;">${currencySymbol} ${stats.outstanding.toLocaleString()}</td>
+        </tr>
+        <tr>
+          <td style="padding: 15px; color: #111827;">${t('total_sessions') || 'Total Sessions'}</td>
+          <td style="padding: 15px; font-weight: 600; color: #111827;">${stats.sessions}</td>
+        </tr>
+      `;
+
+      const revenueRows = data.map(item => `
+        <tr style="border-bottom: 1px solid #f3f4f6;">
+          <td style="padding: 15px; color: #111827; text-align: ${isAr ? 'right' : 'left'};">${item.name}</td>
+          <td style="padding: 15px; font-weight: 600; color: #111827; text-align: ${isAr ? 'left' : 'right'};">${currencySymbol} ${item.value.toLocaleString()}</td>
+          <td style="padding: 15px; text-align: center; color: #111827;">${item.count}</td>
+        </tr>
+      `).join('');
+
+      const expenseRows = expenseData.map(item => `
+        <tr style="border-bottom: 1px solid #f3f4f6;">
+          <td style="padding: 15px; color: #111827; text-align: ${isAr ? 'right' : 'left'};">${item.name}</td>
+          <td style="padding: 15px; font-weight: 600; color: #ef4444; text-align: ${isAr ? 'left' : 'right'};">${currencySymbol} ${item.value.toLocaleString()}</td>
+        </tr>
+      `).join('');
+
+      const htmlContent = `
+        <div style="${containerStyles}">
+          <div style="background: ${primaryColor}; padding: 50px; color: white; display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="display: flex; gap: 20px; align-items: center;">
+              ${studioInfo.logo ? `<img src="${studioInfo.logo}" style="width: 90px; height: 90px; object-fit: contain; background: white; border-radius: 12px; padding: 5px;" />` : `<div style="width: 70px; height: 70px; background: rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 800;">S</div>`}
+              <div>
+                <h1 style="margin: 0; font-size: 32px; font-weight: 800; ${isAr ? '' : 'letter-spacing: -0.025em;'}">${studioInfo.name || 'StudioBiz'}</h1>
+                <p style="margin: 5px 0 0 0; opacity: 0.8; font-size: 14px;">${t('financial_reports') || 'Financial Reports'}</p>
+              </div>
+            </div>
+            <div style="text-align: ${isAr ? 'left' : 'right'}">
+              <h2 style="margin: 0; font-size: 36px; font-weight: 800; ${isAr ? '' : 'text-transform: uppercase;'}">${isAr ? 'تقرير' : 'REPORT'}</h2>
+              <p style="margin: 5px 0 0 0; opacity: 0.9;">${dateStr}</p>
+            </div>
+          </div>
+
+          <div style="padding: 40px 50px;">
+            <h3 style="margin: 0 0 20px 0; font-size: 18px; color: ${primaryColor}; ${isAr ? '' : 'text-transform: uppercase;'}">${t('financial_summary') || 'Financial Summary'}</h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 14px; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+              <tbody style="background: white;">
+                ${summaryRows}
+              </tbody>
+            </table>
+          </div>
+
+          <div style="padding: 0 50px 40px 50px; display: grid; grid-template-columns: 1fr; gap: 40px;">
+            <div>
+              <h3 style="margin: 0 0 20px 0; font-size: 18px; color: #111827; ${isAr ? '' : 'text-transform: uppercase;'}">${t('revenue_by_category') || 'Revenue By Category'}</h3>
+              <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                <thead>
+                  <tr style="background: #f3f4f6;">
+                    <th style="padding: 12px 15px; font-weight: 600; color: #111827; text-align: ${isAr ? 'right' : 'left'};">${t('package_type') || (isAr ? 'نوع الباقة' : 'Package')}</th>
+                    <th style="padding: 12px 15px; font-weight: 600; color: #111827; text-align: ${isAr ? 'left' : 'right'};">${t('revenue_stats') || (isAr ? 'إحصائيات الإيرادات' : 'Revenue')}</th>
+                    <th style="padding: 12px 15px; font-weight: 600; text-align: center; color: #111827;">${t('count') || (isAr ? 'العدد' : 'Count')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${revenueRows}
+                </tbody>
+              </table>
+            </div>
+
+            ${expenseData.length > 0 ? `
+            <div>
+              <h3 style="margin: 0 0 20px 0; font-size: 18px; color: #111827; ${isAr ? '' : 'text-transform: uppercase;'}">${isAr ? 'المصروفات حسب الفئة' : 'Expenses By Category'}</h3>
+              <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                <thead>
+                  <tr style="background: #f3f4f6;">
+                    <th style="padding: 12px 15px; font-weight: 600; color: #111827; text-align: ${isAr ? 'right' : 'left'};">${isAr ? 'الفئة' : 'Category'}</th>
+                    <th style="padding: 12px 15px; font-weight: 600; color: #111827; text-align: ${isAr ? 'left' : 'right'};">${t('amount') || (isAr ? 'المبلغ' : 'Amount')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${expenseRows}
+                </tbody>
+              </table>
+            </div>` : ''}
+          </div>
+
+          <div style="margin-top: auto; background: #f9fafb; padding: 40px 50px; text-align: center; border-top: 1px solid #e5e7eb;">
+            <p style="margin: 0; font-weight: 600; font-size: 15px; color: #4b5563;">${isAr ? 'تقرير مالي رسمي' : 'Official Financial Report'}</p>
+            <p style="margin: 5px 0 0 0; font-size: 13px; color: #9ca3af;">Generated securely by ${studioInfo.name || 'StudioBiz'}</p>
+          </div>
+        </div>
+      `;
+
+      const opt = {
+        margin: 0,
+        filename: `Studio_Report_${new Date().toLocaleDateString()}.pdf`,
+        image: { type: 'png' },
+        html2canvas: { scale: 4, useCORS: true, windowWidth: 800 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      html2pdf().from(htmlContent).set(opt).save().then(() => {
+        setIsLoading(false);
+        setToastMessage(t('pdf_export_success'));
+      }).catch(err => {
+        console.error(err);
+        setIsLoading(false);
+        setToastMessage(t('pdf_export_error'));
       });
-
-      // Detailed Breakdown
-      doc.text(t('revenue_by_category').toUpperCase(), 14, (doc).lastAutoTable.finalY + 15);
-
-      autoTable(doc, {
-        startY: (doc).lastAutoTable.finalY + 18,
-        head: [[t('package_type'), t('revenue_stats'), t('count')]],
-        body: data.map(r => [r.name, `$${r.value.toLocaleString()}`, r.count.toString()]),
-        theme: 'striped',
-        headStyles: { fillColor: [99, 102, 241] }
-      });
-
-      doc.save('Studio_Report.pdf');
-      setToastMessage(t('pdf_export_success'));
     } catch (err) {
-      console.error("PDF Generation Error:", err);
+      console.error(err);
+      setIsLoading(false);
       setToastMessage(t('pdf_export_error'));
     }
+    
     setTimeout(() => setToastMessage(''), 3000);
   };
 
@@ -171,19 +280,19 @@ const Reports = () => {
       <div className="grid-responsive" style={{ marginBottom: '2rem', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
         <div className="card">
           <p className="text-mute" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>{t('total_revenue_paid')}</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}><h2 style={{ fontSize: '1.75rem', fontWeight: 700 }}>${stats.revenue.toLocaleString()}</h2><div className="badge badge-success" style={{ fontSize: '0.65rem' }}>{t('realtime_badge')}</div></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}><h2 style={{ fontSize: '1.75rem', fontWeight: 700 }}>{t('currency')} {stats.revenue.toLocaleString()}</h2><div className="badge badge-success" style={{ fontSize: '0.65rem' }}>{t('realtime_badge')}</div></div>
         </div>
         <div className="card">
           <p className="text-mute" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>{t('total_expenses')}</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}><h2 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--danger)' }}>${stats.expenses.toLocaleString()}</h2></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}><h2 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--danger)' }}>{t('currency')} {stats.expenses.toLocaleString()}</h2></div>
         </div>
         <div className="card" style={{ border: '2px solid var(--accent)' }}>
           <p className="text-mute" style={{ fontSize: '0.875rem', marginBottom: '0.5rem', fontWeight: 700 }}>{t('net_profit')}</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}><h2 style={{ fontSize: '2rem', fontWeight: 800, color: stats.profit >= 0 ? 'var(--success)' : 'var(--danger)' }}>${stats.profit.toLocaleString()}</h2></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}><h2 style={{ fontSize: '2rem', fontWeight: 800, color: stats.profit >= 0 ? 'var(--success)' : 'var(--danger)' }}>{t('currency')} {stats.profit.toLocaleString()}</h2></div>
         </div>
         <div className="card">
           <p className="text-mute" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>{t('outstanding_dues')}</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}><h2 style={{ fontSize: '1.75rem', fontWeight: 700 }}>${stats.outstanding.toLocaleString()}</h2></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}><h2 style={{ fontSize: '1.75rem', fontWeight: 700 }}>{t('currency')} {stats.outstanding.toLocaleString()}</h2></div>
         </div>
       </div>
 

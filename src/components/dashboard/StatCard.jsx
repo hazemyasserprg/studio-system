@@ -1,13 +1,22 @@
 import { motion } from 'framer-motion';
 
-const StatCard = ({ title, value, icon: Icon, color, trend, trendType = 'neutral' }) => {
+const StatCard = ({ title, value, icon: Icon, color, trend, trendType = 'neutral', onClick }) => {
   const trendColor = trendType === 'positive' ? 'var(--success)' : trendType === 'negative' ? 'var(--danger)' : 'var(--text-secondary)';
 
   return (
     <motion.div 
-      whileHover={{ y: -5 }}
+      whileHover={{ y: -5, scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
       className="card"
-      style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', width: '100%' }}
+      style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: '1.5rem', 
+        width: '100%',
+        cursor: onClick ? 'pointer' : 'default',
+        transition: 'all 0.2s ease'
+      }}
     >
       <div 
         style={{ 

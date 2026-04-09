@@ -108,7 +108,7 @@ const Packages = () => {
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
                 <div style={{ background: 'var(--bg-surface)', padding: '0.75rem', borderRadius: '10px', color: 'var(--accent)' }}><Package size={24} /></div>
-                <div style={{ textAlign: lang === 'ar' ? 'left' : 'right' }}><p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('price')}</p><p style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--accent)' }}>${pkg.price}</p></div>
+                <div style={{ textAlign: lang === 'ar' ? 'left' : 'right' }}><p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t('price')}</p><p style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--accent)' }}>{t('currency')} {pkg.price}</p></div>
               </div>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem' }}>{pkg.name}</h3>
               <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>{pkg.description || 'No description provided.'}</p>
@@ -135,7 +135,7 @@ const Packages = () => {
               <div className="input-group"><label className="input-label">{t('package_name')}</label><input type="text" className="input-field" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
               <div className="input-group"><label className="input-label">{t('description')}</label><textarea className="input-field" style={{ minHeight: '80px' }} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div className="input-group"><label className="input-label">{t('price')} ($)</label><input type="number" className="input-field" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} /></div>
+                <div className="input-group"><label className="input-label">{t('price')} ({t('currency')})</label><input type="number" className="input-field" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} /></div>
                 <div className="input-group"><label className="input-label">{t('duration')}</label><input type="number" className="input-field" value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })} /></div>
               </div>
               <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>

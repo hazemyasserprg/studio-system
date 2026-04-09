@@ -147,15 +147,15 @@ const Invoices = () => {
       <div className="grid-responsive" style={{ marginBottom: '2rem' }}>
         <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', padding: '0.75rem', borderRadius: '10px' }}><CheckCircle size={24} /></div>
-          <div><p className="text-mute" style={{ fontSize: '0.875rem' }}>{t('paid_amount')}</p><p style={{ fontSize: '1.5rem', fontWeight: 700 }}>${stats.totalPaid.toLocaleString()}</p></div>
+          <div><p className="text-mute" style={{ fontSize: '0.875rem' }}>{t('paid_amount')}</p><p style={{ fontSize: '1.5rem', fontWeight: 700 }}>{t('currency')} {stats.totalPaid.toLocaleString()}</p></div>
         </div>
         <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <div style={{ background: 'rgba(245, 158, 11, 0.1)', color: 'var(--warning)', padding: '0.75rem', borderRadius: '10px' }}><Clock size={24} /></div>
-          <div><p className="text-mute" style={{ fontSize: '0.875rem' }}>{t('outstanding')}</p><p style={{ fontSize: '1.5rem', fontWeight: 700 }}>${stats.outstanding.toLocaleString()}</p></div>
+          <div><p className="text-mute" style={{ fontSize: '0.875rem' }}>{t('outstanding')}</p><p style={{ fontSize: '1.5rem', fontWeight: 700 }}>{t('currency')} {stats.outstanding.toLocaleString()}</p></div>
         </div>
         <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', padding: '0.75rem', borderRadius: '10px' }}><DollarSign size={24} /></div>
-          <div><p className="text-mute" style={{ fontSize: '0.875rem' }}>{t('overdue')}</p><p style={{ fontSize: '1.5rem', fontWeight: 700 }}>${stats.overdue.toLocaleString()}</p></div>
+          <div><p className="text-mute" style={{ fontSize: '0.875rem' }}>{t('overdue')}</p><p style={{ fontSize: '1.5rem', fontWeight: 700 }}>{t('currency')} {stats.overdue.toLocaleString()}</p></div>
         </div>
       </div>
 
@@ -183,8 +183,8 @@ const Invoices = () => {
                   <tr key={inv.id}>
                     <td style={{ fontWeight: 600, color: 'var(--accent)', textAlign: 'inherit' }}>{inv.id}</td>
                     <td style={{ textAlign: 'inherit' }}>{inv.clients?.name || 'Unknown'}</td>
-                    <td style={{ textAlign: 'inherit' }}>${Number(inv.amount).toLocaleString()}</td>
-                    <td style={{ textAlign: 'inherit' }}>${Number(inv.paid).toLocaleString()}</td>
+                    <td style={{ textAlign: 'inherit' }}>{t('currency')} {Number(inv.amount).toLocaleString()}</td>
+                    <td style={{ textAlign: 'inherit' }}>{t('currency')} {Number(inv.paid).toLocaleString()}</td>
                     <td style={{ textAlign: 'inherit' }}>{inv.due_date || 'N/A'}</td>
                     <td style={{ textAlign: 'inherit' }}><span className={`badge ${getStatusBadge(inv.status)}`}>{tStatus(inv.status)}</span></td>
                     <td>
@@ -195,21 +195,16 @@ const Invoices = () => {
                             setIsExporting(inv.id);
                             
                             setTimeout(() => {
-                              const studioInfo = {
-                                name: localStorage.getItem('studio_name') || 'StudioBiz',
-                                logo: localStorage.getItem('studio_logo') || null,
-                                color: localStorage.getItem('studio_color') ? (
-                                  ((hex) => {
-                                    const r = parseInt(hex.slice(1, 3), 16);
-                                    const g = parseInt(hex.slice(3, 5), 16);
-                                    const b = parseInt(hex.slice(5, 7), 16);
-                                    return [r, g, b];
-                                  })(localStorage.getItem('studio_color'))
-                                ) : [99, 102, 241]
-                               };
+                                const studioInfo = {
+                                  name: localStorage.getItem('studio_name') || 'StudioBiz',
+                                  email: localStorage.getItem('studio_email') || 'contact@studiobiz.com',
+                                  logo: localStorage.getItem('studio_logo') || null,
+                                  color: localStorage.getItem('studio_color') || '#6366f1',
+                                  lang: lang
+                                 };
                               
                               try {
-                                generateInvoicePDF(inv, inv.clients || { name: 'Unknown' }, studioInfo);
+                                generateInvoicePDF(inv, inv.clients || { name: 'Unknown' }, studioInfo, t('currency'));
                                 setToast({ message: t('download_started'), type: 'success' });
                               } catch (err) {
                                 console.error(err);
@@ -251,11 +246,11 @@ const Invoices = () => {
                   const b = bookings.find(x => x.id === val);
                   setNewInvoice({...newInvoice, booking_id: val, amount: b ? b.total_price : 0});
                 }}
-                options={bookings.map(b => ({ label: `${b.clients?.name} - ${b.packages?.name} ($${b.total_price})`, value: b.id }))}
+                options={bookings.map(b => ({ label: `${b.clients?.name} - ${b.packages?.name} (${t('currency')} ${b.total_price})`, value: b.id }))}
                 placeholder={t('select_booking_placeholder')}
               />
               <div className="input-group">
-                <label className="input-label">{t('amount')} ($)</label>
+                <label className="input-label">{t('amount')} ({t('currency')})</label>
                 <input type="number" className="input-field" value={newInvoice.amount} onChange={(e) => setNewInvoice({...newInvoice, amount: e.target.value})} />
               </div>
               <CustomDatePicker label={t('due_date')} value={newInvoice.due_date} onChange={(val) => setNewInvoice({...newInvoice, due_date: val})} openUp={true} />

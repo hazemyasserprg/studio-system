@@ -1,18 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import Sidebar from './components/common/Sidebar';
-import Dashboard from './pages/Dashboard';
-import Clients from './pages/Clients';
-import Packages from './pages/Packages';
-import Bookings from './pages/Bookings';
-import Invoices from './pages/Invoices';
-import Expenses from './pages/Expenses';
-import Reports from './pages/Reports';
-import Settings from './pages/Settings';
-import Login from './pages/Login';
 import { supabase } from './utils/supabase/client';
 import './index.css';
+
+// Lazy load pages
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Clients = lazy(() => import('./pages/Clients'));
+const Packages = lazy(() => import('./pages/Packages'));
+const Bookings = lazy(() => import('./pages/Bookings'));
+const Invoices = lazy(() => import('./pages/Invoices'));
+const Expenses = lazy(() => import('./pages/Expenses'));
+const Reports = lazy(() => import('./pages/Reports'));
+const Settings = lazy(() => import('./pages/Settings'));
+const Login = lazy(() => import('./pages/Login'));
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -103,18 +105,20 @@ const AppContent = ({ isCollapsed, setIsCollapsed, handleLogout }) => {
       />
       <main className={`main-content ${isCollapsed ? 'collapsed' : ''}`}>
         <AnimatePresence mode="wait">
-          <Routes location={location} key={location.pathname}>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/clients" element={<Clients />} />
-            <Route path="/packages" element={<Packages />} />
-            <Route path="/bookings" element={<Bookings />} />
-            <Route path="/invoices" element={<Invoices />} />
-            <Route path="/expenses" element={<Expenses />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="*" element={<div style={{ padding: '2rem' }}>404 - Not Found</div>} />
-          </Routes>
+          <Suspense fallback={<div style={{ padding: '2rem', color: 'var(--accent)' }}>Loading page...</div>}>
+            <Routes location={location} key={location.pathname}>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/clients" element={<Clients />} />
+              <Route path="/packages" element={<Packages />} />
+              <Route path="/bookings" element={<Bookings />} />
+              <Route path="/invoices" element={<Invoices />} />
+              <Route path="/expenses" element={<Expenses />} />
+              <Route path="/reports" element={<Reports />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="*" element={<div style={{ padding: '2rem' }}>404 - Not Found</div>} />
+            </Routes>
+          </Suspense>
         </AnimatePresence>
       </main>
     </div>

@@ -174,7 +174,7 @@ const Expenses = () => {
         </div>
         <div>
           <p className="text-mute" style={{ fontSize: '0.875rem' }}>{t('total_expenses')}</p>
-          <h2 style={{ fontSize: '2rem', fontWeight: 700 }}>${getTotalExpenses().toLocaleString()}</h2>
+          <h2 style={{ fontSize: '2rem', fontWeight: 700 }}>{t('currency')} {getTotalExpenses().toLocaleString()}</h2>
         </div>
       </div>
 
@@ -210,7 +210,7 @@ const Expenses = () => {
                         <span>{new Date(ex.expense_date).toLocaleDateString()}</span>
                       </div>
                     </td>
-                    <td style={{ fontWeight: 700, textAlign: 'inherit' }}>${Number(ex.amount).toLocaleString()}</td>
+                    <td style={{ fontWeight: 700, textAlign: 'inherit' }}>{t('currency')} {Number(ex.amount).toLocaleString()}</td>
                     <td>
                       <div style={{ display: 'flex', gap: '0.5rem', justifyContent: lang === 'ar' ? 'flex-start' : 'flex-end' }}>
                         <button onClick={() => handleOpenModal(ex)} className="btn btn-ghost" style={{ padding: '0.5rem' }}><Edit2 size={18} /></button>
@@ -254,7 +254,7 @@ const Expenses = () => {
 
                 <div className="grid-responsive" style={{ gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
                   <div className="input-group" style={{ marginBottom: 0 }}>
-                    <label className="input-label">{t('amount')} ($)</label>
+                    <label className="input-label">{t('amount')} ({t('currency')})</label>
                     <input 
                       type="number" 
                       className="input-field" 
