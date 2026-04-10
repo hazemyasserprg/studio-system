@@ -35,7 +35,10 @@ const Login = ({ onLogin }) => {
         const { error: authError } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { studio_name: studioName || 'My Studio' } }
+          options: {
+            data: { studio_name: studioName || 'My Studio' },
+            emailRedirectTo: `${window.location.origin}`
+          }
         });
         if (authError) throw authError;
         setSuccessMsg('Account created! Check your email to confirm, then sign in.');
@@ -88,7 +91,7 @@ const Login = ({ onLogin }) => {
           <p>
             {mode === 'login' && 'Sign in to your studio account'}
             {mode === 'signup' && 'Create your studio account'}
-            {mode === 'forgot' && 'Reset your password'}
+            {/* {mode === 'forgot' && 'Reset your password'} */}
           </p>
         </div>
 
@@ -104,12 +107,13 @@ const Login = ({ onLogin }) => {
           </div>
         )}
 
-        {/* Back button for forgot mode */}
+        {/* 
         {mode === 'forgot' && (
           <button className="btn btn-ghost" style={{ marginBottom: '1rem', fontSize: '0.875rem', color: 'var(--text-secondary)', padding: '0.375rem 0' }} onClick={() => switchMode('login')}>
             ← Back to Sign In
           </button>
         )}
+        */}
 
         {/* Success */}
         {successMsg && (
@@ -171,12 +175,14 @@ const Login = ({ onLogin }) => {
               </div>
             )}
 
+            {/* 
             {mode === 'login' && (
               <button type="button" className="btn btn-ghost" style={{ alignSelf: 'flex-end', fontSize: '0.8rem', color: 'var(--accent)', padding: '0.25rem 0', marginTop: '-0.75rem' }}
                 onClick={() => switchMode('forgot')}>
                 <KeyRound size={13} /> Forgot password?
               </button>
             )}
+            */}
 
             <button id="login-submit" type="submit" className="btn btn-primary login-submit-btn" disabled={isLoading}>
               {isLoading ? (
@@ -186,7 +192,7 @@ const Login = ({ onLogin }) => {
                   <span>
                     {mode === 'login' && 'Sign In'}
                     {mode === 'signup' && 'Create Studio Account'}
-                    {mode === 'forgot' && 'Send Reset Link'}
+                    {/* {mode === 'forgot' && 'Send Reset Link'} */}
                   </span>
                   <ArrowRight size={18} />
                 </>

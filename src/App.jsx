@@ -20,7 +20,7 @@ const Login = lazy(() => import('./pages/Login'));
 function App() {
   const [session, setSession] = useState(undefined);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [showReset, setShowReset] = useState(false);
+  // const [showReset, setShowReset] = useState(false);
 
   useEffect(() => {
     // Auto-collapse sidebar on smaller screens
@@ -50,9 +50,11 @@ function App() {
 
   useEffect(() => {
     // 1. Check for PASSWORD_RECOVERY in URL fragment (fallback for initial load)
+    /*
     if (window.location.hash.includes('type=recovery')) {
       setShowReset(true);
     }
+    */
 
     // 2. Get initial session (null if none)
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -61,9 +63,11 @@ function App() {
 
     // 3. Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      /*
       if (event === 'PASSWORD_RECOVERY') {
         setShowReset(true);
       }
+      */
       setSession(session ?? null);
     });
 
@@ -121,6 +125,7 @@ function App() {
 
   return (
     <Router>
+      {/* 
       {showReset && <ResetPasswordModal onDone={() => {
         setShowReset(false);
         // Clear the recovery fragment from the URL
@@ -128,10 +133,11 @@ function App() {
           window.history.replaceState(null, '', window.location.pathname + window.location.search);
         }
       }} />}
+      */}
       <Suspense fallback={null}>
         {session === null ? (
           <Routes>
-            <Route path="*" element={<Login onLogin={() => {}} />} />
+            <Route path="*" element={<Login onLogin={() => { }} />} />
           </Routes>
         ) : (
           <AppContent
