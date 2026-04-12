@@ -207,7 +207,7 @@ const Clients = () => {
                     <td style={{ textAlign: 'inherit' }}><span className={`badge ${getStatusBadge(client.status)}`}>{t(client.status.toLowerCase())}</span></td>
                     <td style={{ textAlign: 'inherit' }}><div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'inherit' }}><Calendar size={14} /><span>{new Date(client.created_at).toLocaleDateString()}</span></div></td>
                     <td>
-                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: lang === 'ar' ? 'flex-start' : 'flex-end' }}>
+                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                         <button onClick={() => handleOpenModal(client)} className="btn btn-ghost" style={{ padding: '0.5rem' }}><Edit2 size={16} /></button>
                         <button onClick={() => { setDeletingId(client.id); setIsConfirmOpen(true); }} className="btn btn-ghost" style={{ padding: '0.5rem', color: 'var(--danger)' }}><Trash2 size={16} /></button>
                       </div>

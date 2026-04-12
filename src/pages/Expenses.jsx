@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Wallet, Trash2, Edit2, X, Loader2, Calendar, Tag } from 'lucide-react';
+import { Plus, Wallet, Trash2, Edit2, X, Loader2, Calendar, Tag, Paperclip, FileText, ExternalLink } from 'lucide-react';
 import { supabase } from '../utils/supabase/client';
 import Toast from '../components/common/Toast';
 import ConfirmModal from '../components/common/ConfirmModal';
@@ -24,10 +24,15 @@ const Expenses = () => {
   const [form, setForm] = useState({ 
     description: '', 
     amount: '', 
-    category: 'others', 
-    expense_date: new Date().toISOString().split('T')[0] 
+    category: 'rent', 
+    customCategory: '',
+    expense_date: new Date().toISOString().split('T')[0],
+    receipt: null
   });
 
+  const [isUploading, setIsUploading] = useState(false);
+
+  const predefinedValues = ['rent', 'equipment', 'marketing', 'software', 'others'];
   const categories = [
     { label: t('cat_rent'), value: 'rent' },
     { label: t('cat_equipment'), value: 'equipment' },
@@ -60,19 +65,25 @@ const Expenses = () => {
   const handleOpenModal = (expense = null) => {
     if (expense) {
       setEditingExpense(expense);
+      const isCustom = !predefinedValues.includes(expense.category);
       setForm({
         description: expense.description,
         amount: expense.amount,
-        category: expense.category,
-        expense_date: expense.expense_date
+        category: isCustom ? 'others' : expense.category,
+        customCategory: isCustom ? expense.category : '',
+        expense_date: expense.expense_date,
+        receipt: null,
+        receipt_url: expense.receipt_url
       });
     } else {
       setEditingExpense(null);
       setForm({ 
         description: '', 
         amount: '', 
-        category: 'others', 
-        expense_date: new Date().toISOString().split('T')[0] 
+        category: 'rent', 
+        customCategory: '',
+        expense_date: new Date().toISOString().split('T')[0],
+        receipt: null
       });
     }
     setIsModalOpen(true);
@@ -82,9 +93,43 @@ const Expenses = () => {
     e.preventDefault();
     if (!form.description || !form.amount || !form.expense_date) return;
 
+    const finalCategory = form.category === 'others' 
+      ? (form.customCategory || 'others') 
+      : form.category;
+
+    setIsUploading(true);
+    let receipt_url = editingExpense?.receipt_url || null;
+
+    if (form.receipt) {
+      const file = form.receipt;
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = fileName;
+
+      const { error: uploadError } = await supabase.storage
+        .from('receipts')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        setToast({ message: `Upload failed: ${uploadError.message}`, type: 'danger' });
+        setIsUploading(false);
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('receipts')
+        .getPublicUrl(filePath);
+      
+      receipt_url = publicUrl;
+    }
+
     const expenseData = {
-      ...form,
-      amount: parseFloat(form.amount) || 0
+      description: form.description,
+      amount: parseFloat(form.amount) || 0,
+      category: finalCategory,
+      expense_date: form.expense_date,
+      receipt_url
     };
 
     if (editingExpense) {
@@ -96,10 +141,11 @@ const Expenses = () => {
       if (error) {
         console.error('Update expense error:', error);
         setToast({ message: error.message || t('export_failed'), type: 'danger' });
+        setIsUploading(false);
         return;
       }
       
-      setExpenses(expenses.map(ex => ex.id === editingExpense.id ? { ...ex, ...form } : ex));
+      setExpenses(expenses.map(ex => ex.id === editingExpense.id ? { ...ex, ...expenseData } : ex));
       setToast({ message: t('expense_updated'), type: 'success' });
     } else {
       const { data, error } = await supabase
@@ -110,6 +156,7 @@ const Expenses = () => {
       if (error) {
         console.error('Add expense error:', error);
         setToast({ message: error.message || t('export_failed'), type: 'danger' });
+        setIsUploading(false);
         return;
       }
       
@@ -119,6 +166,7 @@ const Expenses = () => {
       }
     }
     
+    setIsUploading(false);
     setIsModalOpen(false);
     setTimeout(() => setToast({ message: '', type: 'success' }), 3000);
   };
@@ -192,6 +240,7 @@ const Expenses = () => {
                   <th>{t('expense_category')}</th>
                   <th>{t('expense_date')}</th>
                   <th>{t('amount')}</th>
+                  <th>{t('receipt')}</th>
                   <th style={{ textAlign: lang === 'ar' ? 'left' : 'right' }}>{t('actions')}</th>
                 </tr>
               </thead>
@@ -201,7 +250,7 @@ const Expenses = () => {
                     <td style={{ fontWeight: 600, textAlign: 'inherit' }}>{ex.description}</td>
                     <td style={{ textAlign: 'inherit' }}>
                       <span className="badge badge-accent">
-                        {t(`cat_${ex.category}`)}
+                        {predefinedValues.includes(ex.category) ? t(`cat_${ex.category}`) : ex.category}
                       </span>
                     </td>
                     <td style={{ textAlign: 'inherit' }}>
@@ -211,8 +260,24 @@ const Expenses = () => {
                       </div>
                     </td>
                     <td style={{ fontWeight: 700, textAlign: 'inherit' }}>{t('currency')} {Number(ex.amount).toLocaleString()}</td>
+                    <td style={{ textAlign: 'inherit' }}>
+                      {ex.receipt_url ? (
+                        <a 
+                          href={ex.receipt_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="btn btn-ghost"
+                          style={{ padding: '0.4rem', color: 'var(--accent)' }}
+                          title={t('view_receipt')}
+                        >
+                          <FileText size={18} />
+                        </a>
+                      ) : (
+                        <span className="text-mute" style={{ fontSize: '0.8rem' }}>—</span>
+                      )}
+                    </td>
                     <td>
-                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: lang === 'ar' ? 'flex-start' : 'flex-end' }}>
+                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                         <button onClick={() => handleOpenModal(ex)} className="btn btn-ghost" style={{ padding: '0.5rem' }}><Edit2 size={18} /></button>
                         <button onClick={() => { setDeletingId(ex.id); setIsConfirmOpen(true); }} className="btn btn-ghost" style={{ padding: '0.5rem', color: 'var(--danger)' }}><Trash2 size={18} /></button>
                       </div>
@@ -271,6 +336,24 @@ const Expenses = () => {
                   />
                 </div>
 
+                {form.category === 'others' && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }} 
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="input-group"
+                  >
+                    <label className="input-label">{t('custom_category')}</label>
+                    <input 
+                      type="text" 
+                      className="input-field" 
+                      placeholder={t('custom_category_placeholder')}
+                      value={form.customCategory} 
+                      onChange={(e) => setForm({...form, customCategory: e.target.value})} 
+                      required
+                    />
+                  </motion.div>
+                )}
+
                 <CustomDatePicker 
                   label={t('expense_date')} 
                   value={form.expense_date} 
@@ -278,10 +361,38 @@ const Expenses = () => {
                   openUp={true}
                 />
 
+                <div className="input-group" style={{ marginTop: '1.5rem' }}>
+                  <label className="input-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Paperclip size={16} />
+                    {t('receipt')}
+                  </label>
+                  <div className="file-input-wrapper" style={{ position: 'relative' }}>
+                    <input 
+                      type="file" 
+                      id="receipt-upload"
+                      style={{ position: 'absolute', opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }}
+                      onChange={(e) => setForm({...form, receipt: e.target.files[0]})}
+                    />
+                    <div className="input-field" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ color: form.receipt ? 'var(--text-primary)' : 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                        {form.receipt ? form.receipt.name : t('choose_file')}
+                      </span>
+                      <button type="button" className="btn btn-primary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.75rem' }}>
+                        {t('upload')}
+                      </button>
+                    </div>
+                  </div>
+                  {editingExpense?.receipt_url && !form.receipt && (
+                    <p style={{ fontSize: '0.75rem', marginTop: '0.5rem', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                      <Tag size={12} /> {lang === 'ar' ? 'يوجد إيصال مرفق بالفعل' : 'Already has a receipt attached'}
+                    </p>
+                  )}
+                </div>
+
                 <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
                   <button type="button" onClick={() => setIsModalOpen(false)} className="btn btn-ghost" style={{ flex: 1 }}>{t('cancel')}</button>
-                  <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
-                    {editingExpense ? t('save_changes') : t('add_expense')}
+                  <button type="submit" disabled={isUploading} className="btn btn-primary" style={{ flex: 1 }}>
+                    {isUploading ? <Loader2 className="animate-spin" size={20} /> : (editingExpense ? t('save_changes') : t('add_expense'))}
                   </button>
                 </div>
               </form>

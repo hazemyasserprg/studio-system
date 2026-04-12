@@ -185,7 +185,13 @@ const translations = {
     cat_others: 'Others',
     expense_added: 'Expense recorded!',
     expense_updated: 'Expense updated!',
-    expense_deleted: 'Expense removed.'
+    expense_deleted: 'Expense removed.',
+    custom_category: 'Custom Category',
+    custom_category_placeholder: 'e.g. Maintenance',
+    receipt: 'Receipt',
+    view_receipt: 'View Receipt',
+    choose_file: 'Choose a file...',
+    upload: 'Upload'
   },
   ar: {
     dashboard: 'لوحة التحكم',
@@ -371,7 +377,13 @@ const translations = {
     cat_others: 'أخرى',
     expense_added: 'تم تسجيل المصروف!',
     expense_updated: 'تم تحديث المصروف!',
-    expense_deleted: 'تم حذف المصروف.'
+    expense_deleted: 'تم حذف المصروف.',
+    custom_category: 'تصنيف مخصص',
+    custom_category_placeholder: 'مثلاً: صيانة',
+    receipt: 'الإيصال',
+    view_receipt: 'عرض الإيصال',
+    choose_file: 'اختر ملفاً...',
+    upload: 'رفع'
   }
 };
 

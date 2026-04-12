@@ -186,7 +186,7 @@ const Bookings = () => {
                     <td style={{ fontWeight: 600, textAlign: 'inherit' }}>{t('currency')} {b.total_price}</td>
                     <td style={{ textAlign: 'inherit' }}><span className={`badge ${b.status === 'Confirmed' ? 'badge-success' : 'badge-warning'}`}>{t(b.status.toLowerCase())}</span></td>
                     <td>
-                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: lang === 'ar' ? 'flex-start' : 'flex-end' }}>
+                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                         <button onClick={() => { setDeletingId(b.id); setIsConfirmOpen(true); }} className="btn btn-ghost" style={{ padding: '0.5rem', color: 'var(--danger)' }}><Trash2 size={18} /></button>
                       </div>
                     </td>

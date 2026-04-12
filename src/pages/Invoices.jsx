@@ -84,6 +84,28 @@ const Invoices = () => {
     setTimeout(() => setToast({ message: '', type: 'success' }), 3000);
   };
 
+  const handleMarkAsPaid = async (invoice) => {
+    const { error } = await supabase
+      .from('invoices')
+      .update({ 
+        paid: invoice.amount, 
+        status: 'Paid' 
+      })
+      .eq('id', invoice.id);
+
+    if (!error) {
+      const updated = invoices.map(inv => 
+        inv.id === invoice.id ? { ...inv, paid: invoice.amount, status: 'Paid' } : inv
+      );
+      setInvoices(updated);
+      calculateStats(updated);
+      setToast({ message: t('invoice_updated') || 'Invoice updated successfully', type: 'success' });
+    } else {
+      setToast({ message: 'Error updating invoice', type: 'danger' });
+    }
+    setTimeout(() => setToast({ message: '', type: 'success' }), 3000);
+  };
+
   const onConfirmDelete = async () => {
     if (!deletingId) return;
     const { error } = await supabase.from('invoices').delete().eq('id', deletingId);
@@ -189,7 +211,17 @@ const Invoices = () => {
                     <td style={{ textAlign: 'inherit' }}>{inv.due_date || 'N/A'}</td>
                     <td style={{ textAlign: 'inherit' }}><span className={`badge ${getStatusBadge(inv.status)}`}>{tStatus(inv.status)}</span></td>
                     <td>
-                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: lang === 'ar' ? 'flex-start' : 'flex-end' }}>
+                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                        {inv.status !== 'Paid' && (
+                          <button 
+                            onClick={() => handleMarkAsPaid(inv)} 
+                            className="btn btn-ghost" 
+                            style={{ padding: '0.5rem', color: 'var(--success)' }}
+                            title={t('mark_as_paid') || 'Mark as Paid'}
+                          >
+                            <DollarSign size={18} />
+                          </button>
+                        )}
                         <button 
                           onClick={() => {
                             setToast({ message: t('pdf_generating'), type: 'info' });

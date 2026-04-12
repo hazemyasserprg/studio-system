@@ -33,15 +33,16 @@ const Dashboard = () => {
       const { data: expensesData } = await supabase.from('expenses').select('*');
       const totalExpenses = expensesData?.reduce((acc, ex) => acc + (Number(ex.amount) || 0), 0) || 0;
 
-      const totalRevenue = invoicesData?.reduce((acc, inv) => acc + (Number(inv.paid) || 0), 0) || 0;
-      const pendingInvoicesAmount = invoicesData?.filter(inv => inv.status !== 'Paid').reduce((acc, inv) => acc + (Number(inv.amount) - (Number(inv.paid) || 0)), 0) || 0;
-      const netProfit = totalRevenue - totalExpenses;
+      const totalBilled = invoicesData?.reduce((acc, inv) => acc + (Number(inv.amount) || 0), 0) || 0;
+      const totalPaid = invoicesData?.reduce((acc, inv) => acc + (Number(inv.paid) || 0), 0) || 0;
+      const pendingInvoicesAmount = totalBilled - totalPaid;
+      const netProfit = totalBilled - totalExpenses; // Use billed revenue for business profit calculation
 
       setStats([
         { title: t('total_clients'), value: clientCount?.toString() || '0', icon: Users, color: '#6366f1', onClick: () => navigate('/clients') },
         { title: t('total_bookings'), value: bookingsData?.length?.toString() || '0', icon: CalendarClock, color: '#10b981', onClick: () => navigate('/bookings') },
         { title: t('pending_invoices'), value: `${t('currency')} ${pendingInvoicesAmount.toLocaleString()}`, icon: Wallet, color: '#f59e0b', onClick: () => navigate('/invoices') },
-        { title: t('total_revenue'), value: `${t('currency')} ${totalRevenue.toLocaleString()}`, icon: TrendingUp, color: '#ec4899', onClick: () => navigate('/reports') },
+        { title: t('total_revenue'), value: `${t('currency')} ${totalBilled.toLocaleString()}`, icon: TrendingUp, color: '#ec4899', onClick: () => navigate('/reports') },
         { title: t('total_expenses'), value: `${t('currency')} ${totalExpenses.toLocaleString()}`, icon: Wallet, color: '#ef4444', onClick: () => navigate('/expenses') },
         { title: t('net_profit'), value: `${t('currency')} ${netProfit.toLocaleString()}`, icon: TrendingUp, color: '#8b5cf6', onClick: () => navigate('/reports') },
       ]);

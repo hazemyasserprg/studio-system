@@ -116,12 +116,21 @@
   top: 1rem;
   left: 1rem;
   z-index: 1100;
-  background: var(--bg-surface);
+  background: var(--bg-secondary);
   border: 1px solid var(--border);
-  color: white;
-  padding: 0.5rem;
-  border-radius: 8px;
+  color: var(--text-primary);
+  padding: 0.6rem;
+  border-radius: 12px;
   cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: var(--transition);
+}
+
+.mobile-toggle:hover {
+  background: var(--bg-surface);
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-2px);
 }
 
 @media (max-width: 1024px) {
@@ -133,6 +142,10 @@
   
   .sidebar.mobile-open {
     transform: translateX(0);
+  }
+
+  .sidebar-header {
+    padding-top: 4.5rem;
   }
 
   body.rtl .sidebar {
