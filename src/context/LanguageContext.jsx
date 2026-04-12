@@ -107,6 +107,8 @@ const translations = {
     partially_paid_status: 'Partially Paid',
     unpaid_status: 'Unpaid',
     overdue: 'Overdue',
+    total_to_bill: 'Total Bill',
+    already_paid: 'Deposit / Paid Amount',
     // Reports
     reports_title: 'Financial Reports',
     reports_subtitle: 'Advanced analytics and performance tracking.',
@@ -299,6 +301,8 @@ const translations = {
     partially_paid_status: 'مدفوع جزئياً',
     unpaid_status: 'غير مدفوع',
     overdue: 'متأخر',
+    total_to_bill: 'إجمالي الفاتورة',
+    already_paid: 'المبلغ المدفوع / العربون',
     // Reports
     reports_title: 'التقارير المالية',
     reports_subtitle: 'تحليلات متقدمة وتتبع الأداء.',

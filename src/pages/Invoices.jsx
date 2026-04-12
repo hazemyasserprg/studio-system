@@ -26,7 +26,10 @@ const Invoices = () => {
   const [isExporting, setIsExporting] = useState(null);
 
   // New Invoice State
-  const [newInvoice, setNewInvoice] = useState({ booking_id: '', amount: 0, due_date: '', id: '' });
+  const [newInvoice, setNewInvoice] = useState({ booking_id: '', amount: 0, paid: 0, due_date: '', id: '' });
+
+  // Payment State
+  const [paymentModal, setPaymentModal] = useState({ isOpen: false, invoice: null, amount: '' });
 
   // Animation variants
   const pageVariants = {
@@ -68,9 +71,13 @@ const Invoices = () => {
     const booking = bookings.find(b => b.id === newInvoice.booking_id);
     const client_id = booking?.client_id;
 
+    const status = Number(newInvoice.paid) >= Number(newInvoice.amount) 
+      ? 'Paid' 
+      : (Number(newInvoice.paid) > 0 ? 'Partially Paid' : 'Unpaid');
+
     const { data, error } = await supabase
       .from('invoices')
-      .insert([{ ...newInvoice, client_id }])
+      .insert([{ ...newInvoice, client_id, status }])
       .select('*, clients(name)');
 
     if (!error) {
@@ -78,28 +85,35 @@ const Invoices = () => {
       setInvoices(updated);
       setToast({ message: t('invoice_generated'), type: 'success' });
       setIsModalOpen(false);
-      setNewInvoice({ booking_id: '', amount: 0, due_date: '', id: '' });
+      setNewInvoice({ booking_id: '', amount: 0, paid: 0, due_date: '', id: '' });
       calculateStats(updated);
     }
     setTimeout(() => setToast({ message: '', type: 'success' }), 3000);
   };
 
-  const handleMarkAsPaid = async (invoice) => {
+  const handleRecordPayment = async () => {
+    const { invoice, amount } = paymentModal;
+    if (!invoice || !amount) return;
+
+    const newPaidAmount = (Number(invoice.paid) || 0) + Number(amount);
+    const status = newPaidAmount >= Number(invoice.amount) ? 'Paid' : 'Partially Paid';
+
     const { error } = await supabase
       .from('invoices')
       .update({ 
-        paid: invoice.amount, 
-        status: 'Paid' 
+        paid: newPaidAmount, 
+        status: status 
       })
       .eq('id', invoice.id);
 
     if (!error) {
       const updated = invoices.map(inv => 
-        inv.id === invoice.id ? { ...inv, paid: invoice.amount, status: 'Paid' } : inv
+        inv.id === invoice.id ? { ...inv, paid: newPaidAmount, status: status } : inv
       );
       setInvoices(updated);
       calculateStats(updated);
-      setToast({ message: t('invoice_updated') || 'Invoice updated successfully', type: 'success' });
+      setToast({ message: t('invoice_updated') || 'Payment recorded!', type: 'success' });
+      setPaymentModal({ isOpen: false, invoice: null, amount: '' });
     } else {
       setToast({ message: 'Error updating invoice', type: 'danger' });
     }
@@ -214,10 +228,10 @@ const Invoices = () => {
                       <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                         {inv.status !== 'Paid' && (
                           <button 
-                            onClick={() => handleMarkAsPaid(inv)} 
+                            onClick={() => setPaymentModal({ isOpen: true, invoice: inv, amount: '' })} 
                             className="btn btn-ghost" 
                             style={{ padding: '0.5rem', color: 'var(--success)' }}
-                            title={t('mark_as_paid') || 'Mark as Paid'}
+                            title={t('mark_as_paid') || 'Record Payment'}
                           >
                             <DollarSign size={18} />
                           </button>
@@ -291,13 +305,61 @@ const Invoices = () => {
                 placeholder={t('select_booking_placeholder')}
               />
               <div className="input-group">
-                <label className="input-label">{t('amount')} ({t('currency')})</label>
+                <label className="input-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>{t('amount')} ({t('total_to_bill') || 'Total to Bill'})</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--accent)' }}>{t('currency')}</span>
+                </label>
                 <input type="number" className="input-field" value={newInvoice.amount} onChange={(e) => setNewInvoice({...newInvoice, amount: e.target.value})} />
               </div>
+
+              <div className="input-group">
+                <label className="input-label">{t('paid_amount')} ({t('already_paid') || 'Already Paid / Deposit'})</label>
+                <input type="number" className="input-field" placeholder="0" value={newInvoice.paid} onChange={(e) => setNewInvoice({...newInvoice, paid: e.target.value})} />
+                {Number(newInvoice.paid) > Number(newInvoice.amount) && Number(newInvoice.amount) > 0 && (
+                  <p style={{ color: 'var(--danger)', fontSize: '0.75rem', marginTop: '0.4rem' }}>
+                    ⚠️ {lang === 'ar' ? 'المبلغ المدفوع أكبر من إجمالي الفاتورة' : 'Paid amount is higher than the total bill.'}
+                  </p>
+                )}
+              </div>
+
               <CustomDatePicker label={t('due_date')} value={newInvoice.due_date} onChange={(val) => setNewInvoice({...newInvoice, due_date: val})} openUp={true} />
               <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
                 <button onClick={() => setIsModalOpen(false)} className="btn btn-ghost" style={{ flex: 1 }}>{t('cancel')}</button>
                 <button onClick={handleCreateInvoice} className="btn btn-primary" style={{ flex: 1 }}>{t('create_invoice')}</button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {paymentModal.isOpen && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="card" style={{ width: '90%', maxWidth: '400px', padding: '2rem', margin: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>{lang === 'ar' ? 'تسجيل دفعة' : 'Record Payment'}</h2>
+                <button onClick={() => setPaymentModal({ isOpen: false, invoice: null, amount: '' })} className="btn btn-ghost"><X size={20} /></button>
+              </div>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+                {lang === 'ar' ? 'المبلغ المتبقي:' : 'Remaining Balance:'} 
+                <strong style={{ color: 'var(--accent)', marginLeft: '0.5rem' }}>
+                  {t('currency')} {(paymentModal.invoice.amount - paymentModal.invoice.paid).toLocaleString()}
+                </strong>
+              </p>
+              <div className="input-group">
+                <label className="input-label">{lang === 'ar' ? 'المبلغ المدفوع الآن' : 'Amount Paid Now'}</label>
+                <input 
+                  type="number" 
+                  className="input-field" 
+                  autoFocus
+                  value={paymentModal.amount} 
+                  onChange={(e) => setPaymentModal({...paymentModal, amount: e.target.value})}
+                  onKeyPress={(e) => e.key === 'Enter' && handleRecordPayment()}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+                <button onClick={() => setPaymentModal({ isOpen: false, invoice: null, amount: '' })} className="btn btn-ghost" style={{ flex: 1 }}>{t('cancel')}</button>
+                <button onClick={handleRecordPayment} className="btn btn-primary" style={{ flex: 1 }}>{t('confirm')}</button>
               </div>
             </motion.div>
           </div>
